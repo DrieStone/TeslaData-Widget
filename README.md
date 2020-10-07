@@ -1,6 +1,8 @@
 # TeslaFi-Widget
 A Scriptable widget to pull data from the TeslaFi API
 
+![Screenshot](TeslaFi_Screen.jpg)
+
 ## Usage
 You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://teslafi.com/api.php) and either add it as a widget parameter, or you can hardcode it in the js file.
 
