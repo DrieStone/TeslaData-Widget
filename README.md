@@ -14,6 +14,10 @@ Note, due to the lag with TeslaFi pulling data from your car, and the lag of iOS
 
 Also note that this really only works as a small widget size, and only tested on an iPhone X (it may work fine for other phones, but not sure about iPad)
 
+## Features
+
+This should support charging info (icon, charge limit, and time until charge complete), conditioning on indicator, doors locked/unlocked, sentry mode on, as well as sleeping, idle, driving modes.
+
 ## Outstanding Bugs
 
 There appears to be an issue with SF graphics in Scriptable where the images are stretched. 
