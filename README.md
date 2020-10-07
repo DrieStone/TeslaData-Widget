@@ -16,7 +16,12 @@ Also note that this really only works as a small widget size, and only tested on
 
 ## Features
 
-This should support charging info (icon, charge limit, and time until charge complete), conditioning on indicator, doors locked/unlocked, sentry mode on, as well as sleeping, idle, driving modes.
+This should support:
+* charging overview (current charge, charge limit, and time until charge complete)
+* conditioning on indicator
+* doors locked/unlocked
+* sentry mode on
+* sleeping, idle, driving indicator
 
 ## Outstanding Bugs
 
