@@ -3,7 +3,7 @@
 // icon-color: red; icon-glyph: charging-station;
 
 // TeslaFi Widget
-// Version 0.5
+// Version 0.6
 // Jon Sweet (jon@driestone.com)
 //
 // This pulls data from the TeslaFi API to display a widget on your iPhone
@@ -19,7 +19,6 @@ const show_range_est = true // show range estimated by TeslaFi instead of the ca
 const battery_display_3D = false // show a 3D version of the battery bar
 
 // You can imbed your TeslaFi APIkey here, or add it as a widget parameter
-APIkey = "dcd06d685a379dd7d566e6be0dd45bcf" // hardcode my APIkey for testing
 //APIkey = "API KEY" // hardcode the API Key
 
 const debugMode = false
