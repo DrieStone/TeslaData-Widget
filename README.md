@@ -20,4 +20,4 @@ There appears to be an issue with SF graphics in Scriptable where the images are
 
 ## Changelog
 
-v0.5 initial release
+v0.6 initial release added to GitHub
