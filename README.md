@@ -24,6 +24,7 @@ This should support:
 * charging overview (current charge, charge limit, and time until charge complete)
 * conditioning on indicator
 * doors locked/unlocked
+* interior temperature
 * sentry mode on
 * sleeping, idle, driving indicator
 
