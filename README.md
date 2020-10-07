@@ -4,7 +4,11 @@ A Scriptable widget to pull data from the TeslaFi API
 <img src="TeslaFi_Screen.jpg" width="400" />
 
 ## Usage
-You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://teslafi.com/api.php) and either add it as a widget parameter, or you can hardcode it in the js file.
+You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://teslafi.com/api.php).
+
+* Download the TeslaFi Widget.js file to you iCloud/scriptables folder
+* Create a small scriptables widget
+* Under widget options, select "TeslaFi Widget" and enter the API key into the widget parameters
 
 There are a few options if you want to turn on/off battery percentage and estimated range (and if you'd like to use the car's range, or the TeslaFi estimate).
 
