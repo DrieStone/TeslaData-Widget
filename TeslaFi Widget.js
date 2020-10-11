@@ -3,12 +3,12 @@
 // icon-color: red; icon-glyph: charging-station;
 
 // TeslaFi Widget
-// Version 0.6
+// Version 0.7
 // Jon Sweet (jon@driestone.com)
 //
 // This pulls data from the TeslaFi API to display a widget on your iPhone
 // This is better than other methods because TeslaFi tries to encourage your car to sleep to reduce phantom battery drain. Using this script will not directly connect to the car to respect the sleep status.
-// Notice that there is ~5 minute lag for data
+// Notice that there is ~5 minute lag for data. The data may be stale because TeslaFi won't wake the car to get data. I've added a display so you can see how old the data is. The should (normally) be minutes except when the car is sleeping.
 
 
 let APIkey = args.widgetParameter
@@ -17,12 +17,15 @@ const show_battery_percentage = true // show the battery percentage above the ba
 const show_range = true // show the estimated range above the battery bar
 const show_range_est = true // show range estimated by TeslaFi instead of the car's range estimate
 const battery_display_3D = false // show a 3D version of the battery bar
+const show_data_age = true // show how stale the data is
 
 // You can imbed your TeslaFi APIkey here, or add it as a widget parameter
 //APIkey = "API KEY" // hardcode the API Key
 
 const debugMode = false
 
+
+let chargingColor = new Color("#ddbb22")
 
 deviceScreen = Device.screenSize()
 let padding = ((deviceScreen.width - 240) /5)
@@ -64,6 +67,8 @@ if (APIkey == null){
 function createWidget(items) {
 	let w = new ListWidget()
 	w.setPadding(5,5,5,5)
+	w.url = "remotes://" // this doesn't seem to work currently
+	//w.url = "http://tesla.com"
 	let myGradient = new LinearGradient()
 	textColor = new Color("#333333cc")
 	inactiveColor = new Color("#33333366")
@@ -83,6 +88,18 @@ function createWidget(items) {
 	}
 	w.backgroundGradient = myGradient
 
+// BUILD BACKGROUND IMAGE (THIS DOESN'T WORK RIGHT NOW
+
+/*	let backgroundContext = new DrawContext()
+	backgroundContext.opaque = false
+	backgroundContext.size = new Size(300,300)
+	backgroundContext.setFillColor = new Color("#ff0000",0.3)
+	backgroundContext.setStrokeColor = new Color("#ff0000",0.3)
+	backgroundContext.setLineWidth(5)
+	backgroundContext.fillEllipse(new Rect(0,0,75,100))
+	backgroundContext.strokeRect(new Rect(20,20,100,100))
+	w.backgroundImage = backgroundContext.getImage()
+*/
 
 // BUILD BATTERY BAR
 
@@ -90,9 +107,10 @@ function createWidget(items) {
 	batteryPath.addRoundedRect(new Rect(1,1,widgetSize.width-2,18),7,7)
 
 	const batteryPathInset = new Path()
-	batteryPathInset.addRoundedRect(new Rect(2,2,widgetSize.width-3,17),7,7)
+	batteryPathInset.addRoundedRect(new Rect(2,2,widgetSize.width-4,16),7,7)
 
-	batteryAmount = Number(items.usable_battery_level)*(widgetSize.width-2)/100
+// TO DO: Add the usable_battery_level vs battery_level to identify cold level
+	batteryAmount = Number(items.battery_level)*(widgetSize.width-2)/100
 	maxChargeAmount = Number(items.charge_limit_soc)*(widgetSize.width-2)/100
 
 	let myDrawContext = new DrawContext()
@@ -112,7 +130,7 @@ function createWidget(items) {
 		batteryMaxCharge.setFillColor(new Color("#ffffff33"))		
 	}
 	if (items.carState == "Charging"){
-		batteryMaxCharge.setFillColor(new Color("#4455ffcc")) // show it in blue to reitterate charging
+		batteryMaxCharge.setFillColor(chargingColor)
 	}
 	batteryMaxCharge.addPath(batteryPath)
 	batteryMaxCharge.fillPath()
@@ -137,19 +155,48 @@ function createWidget(items) {
 		if (highlightWidth>4 && battery_display_3D){
 
 			const batteryHighlight = new Path()
-			batteryHighlight.addRoundedRect(new Rect(5,5,batteryAmount-6,3),1,1)
+			batteryHighlight.addRoundedRect(new Rect(5,6,batteryAmount-8,3),1,1)
 
-			batteryFull.setFillColor(new Color("#ffffff",0.5))
+			batteryFull.setFillColor(new Color("#ffffff",0.3))
 			batteryFull.addPath(batteryHighlight)
 			batteryFull.fillPath()
+			
+			batteryFull.setFillColor(new Color("#ffffff",0.3))
+			batteryFull.fillEllipse(new Rect(7,6,batteryAmount/4,4))
+			batteryFull.fillEllipse(new Rect(6,6,batteryAmount/8,6))
+			batteryFull.fillEllipse(new Rect(5,6,batteryAmount/12,8))
+
+			batteryFull.fillEllipse(new Rect(batteryAmount-10,6,5,3))
+	
 
 		}
 
 
+		if (battery_display_3D){
+			batteryFull.addPath(batteryPathInset)
+			batteryFull.setStrokeColor(new Color("#00000055"))
+			batteryFull.setLineWidth(2)
+			batteryFull.strokePath()
+			myDrawContext.addPath(batteryPathInset)
+			myDrawContext.setStrokeColor(new Color("#00000022"))
+			myDrawContext.setLineWidth(4)
+			myDrawContext.strokePath()
+		}
+
 		myFullBatteryImage = batteryFull.getImage()
 		myDrawContext.drawImageAtPoint(myFullBatteryImage,new Point(0,0))
-		myDrawContext.setFillColor(inactiveColor)
-		myDrawContext.fillRect(new Rect(batteryAmount,1,1,18))
+
+	if (Number(items.battery_level)<99){
+			myDrawContext.setFillColor(inactiveColor)
+			myDrawContext.fillRect(new Rect(batteryAmount,1,1,18))
+			
+			if (battery_display_3D){
+				myDrawContext.setFillColor(new Color("#00000022"))
+				myDrawContext.fillRect(new Rect(batteryAmount+1,1,3,18))
+
+			}
+
+		}
 	}
 
 
@@ -158,15 +205,6 @@ function createWidget(items) {
 	myDrawContext.setLineWidth(1)
 	myDrawContext.strokePath()
 
-	if (battery_display_3D){
-		myDrawContext.addPath(batteryPathInset)
-		myDrawContext.setStrokeColor(new Color("#00000022"))
-		myDrawContext.setLineWidth(4)
-		myDrawContext.strokePath()
-		myDrawContext.setStrokeColor(new Color("#00000044"))
-		myDrawContext.setLineWidth(2)
-		myDrawContext.strokePath()
-	}
 	batteryBarData = myDrawContext.getImage()
 
 // build that actual widget
@@ -233,27 +271,38 @@ function createWidget(items) {
 		case "Driving":
 			symbolToUse = "car.fill"
 			break;
-		case "Charging":
-			symbolToUse = "bolt.car.fill"
-			break;
 		default:
 			logError(items.carState)
 	}
 	let statusSymbol = SFSymbol.named(symbolToUse)
 	statusSymbolImage = statusSymbol.image
+
+
+	if (show_data_age){
+		let lastUpdateString = ""
+		let lastUpdate = new Date(items.Date.replace(" ","T"))
+		let now = new Date()
+		let timeDiff = Math.round((Math.abs(now - lastUpdate))/(1000 * 60))
+		if (timeDiff < 60) {
+			// been less than an hour since last update
+			lastUpdateString = timeDiff+"m ago"
+		} else if(timeDiff < 1440){
+			lastUpdateString = Math.floor(timeDiff/60)+"h ago"
+		} else {
+			lastUpdateString = Math.floor(timeDiff/1440)+"d ago"
+		}
+		let lastUpdateText = wState.addText(lastUpdateString)
+		lastUpdateText.textColor = textColor
+		lastUpdateText.textOpacity = 0.4
+		lastUpdateText.font = Font.systemFont(12)
+		lastUpdateText.leftAlignText()
+		
+	}
 	let carStateSpacer = wState.addSpacer(null)
 
 
-	if (items.sentry_mode != 1){
-	
-		let carState = wState.addImage(statusSymbolImage)
-		carState.imageSize = scaleImage(statusSymbol.image.size,20)
-		carState.tintColor = symColor
-		carState.imageOpacity = 0.8
-		carState.rightAlignImage()
-
-	
-	} else { //sentry mode is on
+	if (items.sentry_mode == 1){
+		//sentry mode is on
 		sentrySymbol = SFSymbol.named("sun.min.fill")
 		sentrySymbolImage = sentrySymbol.image
 
@@ -272,9 +321,41 @@ function createWidget(items) {
 		let carState = wState.addImage(sentryModeImage)
 		carState.imageSize = scaleImage(sentryModeImage.size,20)
 		carState.rightAlignImage()
-		carState.imageOpacity = 0.8
+		//carState.imageOpacity = 0.8
 		//symColor = Color.red()
+	} else if (items.carState == "Charging") {
+		// car is charging
+
+		let carChargingImageContext = new DrawContext()  
+		carChargingImageContext.opaque = false
+		carChargingImageContext.size = new Size(12,18)
+
+		const boltIcon = new Path()
+		boltIcon.addLines([new Point(8.1,1),new Point(1,10.9), new Point (5.3,10.9), new Point (3.8,18), new Point (10.9,8.1), new Point(6.7,8.1)])
+		boltIcon.closeSubpath()
+		
+		carChargingImageContext.addPath(boltIcon)
+		carChargingImageContext.setLineWidth(2)
+		carChargingImageContext.setStrokeColor(new Color("#33333399"))
+		carChargingImageContext.strokePath()
+		carChargingImageContext.addPath(boltIcon)
+		carChargingImageContext.setFillColor(chargingColor)
+		carChargingImageContext.fillPath()
+	
+
+		carChargingImage = carChargingImageContext.getImage()
+
+		let carState = wState.addImage(carChargingImage)
+		carState.rightAlignImage()
+		
+	} else { 
+		let carState = wState.addImage(statusSymbolImage)
+		carState.imageSize = scaleImage(statusSymbol.image.size,20)
+		carState.tintColor = symColor
+		carState.rightAlignImage()
+
 	}
+	
 
 
 
