@@ -27,6 +27,7 @@ This should support:
 * interior temperature
 * sentry mode on
 * sleeping, idle, driving indicator
+* time since TeslaFi retreived data from the car (respects sleep)
 
 ## Outstanding Bugs
 
@@ -35,3 +36,4 @@ There appears to be an issue with SF graphics in Scriptable where the images are
 ## Changelog
 
 v0.6 initial release added to GitHub
+v0.7 added custom bolt icon for charging so I could add a stroke, changed charging color. Adjusted 3D styling, added time since last communication with the car.
