@@ -3,7 +3,7 @@
 // icon-color: red; icon-glyph: charging-station;
 
 // TeslaFi Widget
-// Version 0.7
+// Version 0.8
 // Jon Sweet (jon@driestone.com)
 //
 // This pulls data from the TeslaFi API to display a widget on your iPhone
@@ -18,6 +18,7 @@ const show_range = true // show the estimated range above the battery bar
 const show_range_est = true // show range estimated by TeslaFi instead of the car's range estimate
 const battery_display_3D = false // show a 3D version of the battery bar
 const show_data_age = true // show how stale the data is
+
 
 // You can imbed your TeslaFi APIkey here, or add it as a widget parameter
 //APIkey = "API KEY" // hardcode the API Key
@@ -101,6 +102,10 @@ function createWidget(items) {
 	w.backgroundImage = backgroundContext.getImage()
 */
 
+
+
+//logError(items.usable_battery_level+"/"+items.battery_level)
+
 // BUILD BATTERY BAR
 
 	const batteryPath = new Path()
@@ -109,8 +114,8 @@ function createWidget(items) {
 	const batteryPathInset = new Path()
 	batteryPathInset.addRoundedRect(new Rect(2,2,widgetSize.width-4,16),7,7)
 
-// TO DO: Add the usable_battery_level vs battery_level to identify cold level
 	batteryAmount = Number(items.battery_level)*(widgetSize.width-2)/100
+	usableBatteryAmount = Number(items.usable_battery_level)*(widgetSize.width-2)/100
 	maxChargeAmount = Number(items.charge_limit_soc)*(widgetSize.width-2)/100
 
 	let myDrawContext = new DrawContext()
@@ -138,12 +143,26 @@ function createWidget(items) {
 	batteryMaxChargeImage = batteryMaxCharge.getImage()
 	myDrawContext.drawImageAtPoint(batteryMaxChargeImage,new Point(0,0))
 	
-// if there's at least some battery, build the current charge state bar
-	if (batteryAmount>1){
+	if (usableBatteryAmount < batteryAmount && usableBatteryAmount > 1){
+		// if the battery is cold, then the usable amount is less than the total amount. 
+		//logError("show usable")
+		let batteryFullUnusable = new DrawContext()  
+		batteryFullUnusable.opaque = false
+		batteryFullUnusable.size = new Size(batteryAmount,20)
 
+		batteryFullUnusable.setFillColor(new Color("#3172D4"))
+		batteryFullUnusable.addPath(batteryPath)
+		batteryFullUnusable.fillPath()
+
+		myDrawContext.drawImageAtPoint(batteryFullUnusable.getImage(),new Point(0,0))
+		usableBatteryAmount -= 3 // make the usable battery display a bit smaller so our blue bar isn't just a sliver
+	}
+
+	if (usableBatteryAmount>1){
+		// if there's at least some battery, build the current charge state bar
 		let batteryFull = new DrawContext()  
 		batteryFull.opaque = false
-		batteryFull.size = new Size(batteryAmount,20)
+		batteryFull.size = new Size(usableBatteryAmount,20)
 
 		batteryFull.setFillColor(new Color("#2BD82E"))
 		batteryFull.addPath(batteryPath)
@@ -151,22 +170,22 @@ function createWidget(items) {
 
 
 
-		let highlightWidth = batteryAmount-10;
+		let highlightWidth = usableBatteryAmount-10;
 		if (highlightWidth>4 && battery_display_3D){
 
 			const batteryHighlight = new Path()
-			batteryHighlight.addRoundedRect(new Rect(5,6,batteryAmount-8,3),1,1)
+			batteryHighlight.addRoundedRect(new Rect(5,6,usableBatteryAmount-8,3),1,1)
 
 			batteryFull.setFillColor(new Color("#ffffff",0.3))
 			batteryFull.addPath(batteryHighlight)
 			batteryFull.fillPath()
 			
 			batteryFull.setFillColor(new Color("#ffffff",0.3))
-			batteryFull.fillEllipse(new Rect(7,6,batteryAmount/4,4))
-			batteryFull.fillEllipse(new Rect(6,6,batteryAmount/8,6))
-			batteryFull.fillEllipse(new Rect(5,6,batteryAmount/12,8))
+			batteryFull.fillEllipse(new Rect(7,6,usableBatteryAmount/4,4))
+			batteryFull.fillEllipse(new Rect(6,6,usableBatteryAmount/8,6))
+			batteryFull.fillEllipse(new Rect(5,6,usableBatteryAmount/12,8))
 
-			batteryFull.fillEllipse(new Rect(batteryAmount-10,6,5,3))
+			batteryFull.fillEllipse(new Rect(usableBatteryAmount-10,6,5,3))
 	
 
 		}
@@ -189,6 +208,9 @@ function createWidget(items) {
 	if (Number(items.battery_level)<99){
 			myDrawContext.setFillColor(inactiveColor)
 			myDrawContext.fillRect(new Rect(batteryAmount,1,1,18))
+			if (usableBatteryAmount != batteryAmount){
+				myDrawContext.fillRect(new Rect(usableBatteryAmount,1,1,18))
+			}
 			
 			if (battery_display_3D){
 				myDrawContext.setFillColor(new Color("#00000022"))
@@ -271,18 +293,20 @@ function createWidget(items) {
 		case "Driving":
 			symbolToUse = "car.fill"
 			break;
+		case "Charging":
+			break;
 		default:
 			logError(items.carState)
 	}
 	let statusSymbol = SFSymbol.named(symbolToUse)
 	statusSymbolImage = statusSymbol.image
 
-
+	let timeDiff = 0
 	if (show_data_age){
 		let lastUpdateString = ""
 		let lastUpdate = new Date(items.Date.replace(" ","T"))
 		let now = new Date()
-		let timeDiff = Math.round((Math.abs(now - lastUpdate))/(1000 * 60))
+		timeDiff = Math.round((Math.abs(now - lastUpdate))/(1000 * 60))
 		if (timeDiff < 60) {
 			// been less than an hour since last update
 			lastUpdateString = timeDiff+"m ago"
@@ -384,6 +408,11 @@ function createWidget(items) {
 	carControlIconLock.imageOpacity = 0.8
 	let carControlSpacer = wControls.addSpacer(null)
 
+	climateOpacity = 0.8
+	if ((timeDiff/60) > 2){
+		//logError (timeDiff/60)
+		climateOpacity = 0.2 // make it super dim after 2 hours of data stale data
+	}
 	climateSymbol = SFSymbol.named("snow")
 	let carControlIconClimate = wControls.addImage(climateSymbol.image)
 	//logError(lockSymbol.image.size)
@@ -391,24 +420,35 @@ function createWidget(items) {
 	carControlIconClimate.containerRelativeShape = true
 	carControlIconClimate.tintColor = textColor
 	carControlIconClimate.borderWidtrh = 1
-	carControlIconClimate.imageOpacity = 0.5
+	carControlIconClimate.imageOpacity = climateOpacity
 	if (items.is_climate_on == 1){
-		carControlIconClimate.tintColor = Color.blue();
+		if (items.inside_temp < items.driver_temp_setting){
+			carControlIconClimate.tintColor = Color.red(); // show the temp setting in red to show heating
+		} else {
+			carControlIconClimate.tintColor = Color.blue(); // show the temp setting in blue to show cooling
+		}
 		carControlIconClimate.imageOpacity = 0.8
 	}
 	//let carControlSpacer2 = wControls.addSpacer(null)
+	let carTempText = ""
 
 	if (items.temperature == "F"){
-		let carTemp = wControls.addText(" "+items.inside_tempF+"°")
-		carTemp.textColor = textColor
-		carTemp.font = Font.systemFont(15)
-		carTemp.textOpacity = 0.6
+		if (items.is_climate_on == 1 && Math.abs(items.driver_temp_settingF - items.inside_tempF) > 0){
+			carTempText = " "+items.inside_tempF+"° ➝ "+items.driver_temp_settingF+"°"
+		} else {
+			carTempText = " "+items.inside_tempF+"°"
+		}
 	} else {
-		let carTemp = wControls.addText(" "+items.inside_temp+"°")		
-		carTemp.textColor = textColor
-		carTemp.font = Font.systemFont(15)
-		carTemp.textOpacity = 0.6
+		if (items.is_climate_on == 1 && Math.abs(items.driver_temp_setting - items.inside_temp) > 0){
+			carTempText = " "+items.inside_temp+"° ➝ "+items.driver_temp_setting+"°"
+		} else {
+			carTempText = " "+items.inside_temp+"°"	
+		}
 	}
+	let carTemp = wControls.addText(carTempText)
+	carTemp.textColor = textColor
+	carTemp.font = Font.systemFont(15)
+	carTemp.textOpacity = climateOpacity
 
 
 
@@ -417,6 +457,14 @@ function createWidget(items) {
 	let batteryCurrentCharge = ""
 	if (show_battery_percentage){ 
 		batteryCurrentCharge = items.usable_battery_level + "%"
+		if (items.usable_battery_level < items.battery_level){
+			batteryCurrentCharge = items.usable_battery_level+"/"+items.battery_level+"%"
+		}
+		if (items.carState == "Charging" && show_range){
+			// we need to show a reduced size since there's not enough room
+			batteryCurrentCharge = items.battery_level + "%"
+		}
+		
 		let batteryCurrentChargePercentTxt = wRangeValue.addText(batteryCurrentCharge)
 		batteryCurrentChargePercentTxt.textColor = textColor
 		batteryCurrentChargePercentTxt.textOpacity = 0.6
@@ -425,13 +473,15 @@ function createWidget(items) {
 
 	}
 	if (show_range){
+		let units = "mi"
+		if (items.measure != "imperial") {units = "km"}
 		if (show_battery_percentage){ 
 			let carChargingSpacer1 = wRangeValue.addSpacer(null)		
 		}
 		if (show_range_est) { 
-			batteryCurrentCharge = Math.floor(items.est_battery_range)+" mi"
+			batteryCurrentCharge = Math.floor(items.est_battery_range)+units
 		} else {
-			batteryCurrentCharge = Math.floor(items.battery_range)+" mi"
+			batteryCurrentCharge = Math.floor(items.battery_range)+units
 		}
 		
 		let batteryCurrentRangeTxt = wRangeValue.addText(batteryCurrentCharge)
@@ -464,6 +514,16 @@ function createWidget(items) {
 
 		wRangeValue.setPadding(5,5,0,5)
 			
+	} else if (items.fast_charger_type != "<invalid?"){
+		// car is connected to charger, but not charging
+		if (show_battery_percentage || show_range){
+			let carChargingSpacer2 = wRangeValue.addSpacer(null)
+		}
+		chargingSymbol = SFSymbol.named("bolt.circle.fill")
+		let carControlIconBolt = wRangeValue.addImage(chargingSymbol.image)
+		carControlIconBolt.imageSize = scaleImage(chargingSymbol.image.size,12)
+		carControlIconBolt.tintColor = textColor
+		carControlIconBolt.imageOpacity = 0.4		
 	}
 
 
