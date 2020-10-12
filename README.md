@@ -7,7 +7,7 @@ A Scriptable widget to pull data from the TeslaFi API
 You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://teslafi.com/api.php).
 
 * Download Scriptable to your iOS device
-* Download the TeslaFi Widget.js file to you iCloud/scriptables folder
+* Download the TeslaFi Widget.js file to your iCloud/Scriptable folder
 * Create a small scriptable widget
 * Under widget options, select "TeslaFi Widget" and enter the API key into the widget parameters
 
