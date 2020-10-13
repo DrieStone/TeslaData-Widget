@@ -514,7 +514,7 @@ function createWidget(items) {
 
 		wRangeValue.setPadding(5,5,0,5)
 			
-	} else if (items.fast_charger_type != "<invalid?"){
+	} else if (items.fast_charger_type != "<invalid>"){
 		// car is connected to charger, but not charging
 		if (show_battery_percentage || show_range){
 			let carChargingSpacer2 = wRangeValue.addSpacer(null)
