@@ -565,7 +565,7 @@ function errorWidget(reason){
  
 async function loadItems() {
  
-	let url = "https://www.teslafi.com/feed.php?token="+APIkey+"&command=lastGood"
+	let url = "https://www.teslafi.com/feed.php?token="+APIkey+"&command=lastGood&encode=1"
 	let req = new Request(url)
 	let json = await req.loadJSON()
 	return json
