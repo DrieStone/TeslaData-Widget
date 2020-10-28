@@ -17,7 +17,7 @@ You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://t
 API url: `https://www.teslafi.com/feed.php?token=YOUR_API_KEY&command=lastGood&encode=1`
 
 ### Other API
-If you use other tools like [TeslaLogger](https://github.com/bassmaster187/TeslaLogger), [Tronity](https://tronity.io/home/5OiA7SfA), etc. you only have to provide [json file](api.json) with the following data:
+If you use other tools like [TeslaLogger](https://github.com/bassmaster187/TeslaLogger), [Tronity](https://tronity.io/home/5OiA7SfA), etc. you only have to provide [json file](api.json) with the following data ([more details on the required fields](json_requirements.md)):
 
 `
 {
@@ -70,7 +70,7 @@ There appears to be an issue with SF graphics in Scriptable where the images are
 
 ## Changelog
 
-- v1.0 use apiurl parameter instead apikey, rename to TeslaData widget
+- v1.0 use apiurl parameter instead apikey, rename to TeslaData widget. Fixed issue where disance value wasn't correct for metric.
 - v0.8 added color coded snowflake to show if we're heating or cooling. Added target temperature to display when preheating/cooling. Added charging icon to show when the charger is connected (but not currently charging). Added metric range display (untested). Added internal temperature showing faded when the data is more than 2 hours old (since the internal temp is probably invalid). Added usable vs. total charge (for colder weather).
 - v0.7 added custom bolt icon for charging so I could add a stroke, changed charging color. Adjusted 3D styling, added time since last communication with the car.  
 - v0.6 initial release added to GitHub  
