@@ -13,10 +13,11 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 
 ### TeslaFi API
 You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://teslafi.com/api.php).
-Api url: `https://www.teslafi.com/feed.php?token=YOUR_API_KEY&command=lastGood&encode=1`
+
+API url: `https://www.teslafi.com/feed.php?token=YOUR_API_KEY&command=lastGood&encode=1`
 
 ### Other API
-If you use other tools like TeslaLogger, Tronity, etc. you only have to provide [json file](api.json) with the following data.
+If you use other tools like TeslaLogger, Tronity, etc. you only have to provide [json file](api.json) with the following data:
 
 `
 {
@@ -39,6 +40,8 @@ If you use other tools like TeslaLogger, Tronity, etc. you only have to provide 
    "fast_charger_type":"<invalid>"
 }
 `
+
+API url (eg.): https://MY_USER:MY_PASS@MY_URL.com/api.json
 
 ## Configuration
 
@@ -67,8 +70,7 @@ There appears to be an issue with SF graphics in Scriptable where the images are
 
 ## Changelog
 
-v0.6 initial release added to GitHub  
-v0.7 added custom bolt icon for charging so I could add a stroke, changed charging color. Adjusted 3D styling, added time since last communication with the car.  
-v0.8 added color coded snowflake to show if we're heating or cooling. Added target temperature to display when preheating/cooling. Added charging icon to show when the charger is connected (but not currently charging). Added metric range display (untested). Added internal temperature showing faded when the data is more than 2 hours old (since the internal temp is probably invalid). Added usable vs. total charge (for colder weather).
-v1.0 use apiurl parameter instead apikey, rename to TeslaData widget
-
+- v1.0 use apiurl parameter instead apikey, rename to TeslaData widget
+- v0.8 added color coded snowflake to show if we're heating or cooling. Added target temperature to display when preheating/cooling. Added charging icon to show when the charger is connected (but not currently charging). Added metric range display (untested). Added internal temperature showing faded when the data is more than 2 hours old (since the internal temp is probably invalid). Added usable vs. total charge (for colder weather).
+- v0.7 added custom bolt icon for charging so I could add a stroke, changed charging color. Adjusted 3D styling, added time since last communication with the car.  
+- v0.6 initial release added to GitHub  
