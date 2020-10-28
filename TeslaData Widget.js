@@ -26,6 +26,9 @@ const show_data_age = true // show how stale the data is
 
 const debugMode = false
 
+// Add some backward compatibility to TeslaFi (if the APIurl is just a token, then assume it's a TeslaFi API key, otherwise, just use the URL
+if (!(APIurl.match(/\./g) || []).length){APIurl = "https://www.teslafi.com/feed.php?token="+APIurl+"&command=lastGood&encode=1";}
+
 
 let chargingColor = new Color("#ddbb22")
 
