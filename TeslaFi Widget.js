@@ -2,26 +2,27 @@
 // These must be at the very top of the file. Do not edit.
 // icon-color: red; icon-glyph: charging-station;
 
-// TeslaFi Widget
-// Version 0.8
+// TeslaData Widget
+// Version 1.0
 // Jon Sweet (jon@driestone.com)
+// Tobias Merkl (@tabsl)
 //
-// This pulls data from the TeslaFi API to display a widget on your iPhone
+// This pulls data from a given API, eg. TeslaFi, Teslalogger, Tronity to display a widget on your iPhone
+// 
+// TelsaFi Notice:
 // This is better than other methods because TeslaFi tries to encourage your car to sleep to reduce phantom battery drain. Using this script will not directly connect to the car to respect the sleep status.
 // Notice that there is ~5 minute lag for data. The data may be stale because TeslaFi won't wake the car to get data. I've added a display so you can see how old the data is. The should (normally) be minutes except when the car is sleeping.
 
-
-let APIkey = args.widgetParameter
+let APIurl = args.widgetParameter
 
 const show_battery_percentage = true // show the battery percentage above the battery bar
 const show_range = true // show the estimated range above the battery bar
-const show_range_est = true // show range estimated by TeslaFi instead of the car's range estimate
+const show_range_est = true // show range estimated instead of the car's range estimate
 const battery_display_3D = false // show a 3D version of the battery bar
 const show_data_age = true // show how stale the data is
 
-
-// You can imbed your TeslaFi APIkey here, or add it as a widget parameter
-//APIkey = "API KEY" // hardcode the API Key
+// You can imbed your APIurl here, or add it as a widget parameter
+//APIurl = "YOUR_API_URL" // hardcode the API url
 
 const debugMode = false
 
@@ -32,8 +33,8 @@ deviceScreen = Device.screenSize()
 let padding = ((deviceScreen.width - 240) /5)
 let widgetSize = new Size(padding + 110, padding + 110)
 
-if (APIkey == null){
-	let widget = errorWidget("TeslaFi APIkey Required")
+if (APIurl == null){
+	let widget = errorWidget("TeslaData Widget API url required")
 	Script.setWidget(widget)
 	widget.presentSmall()
 	Script.complete()
@@ -54,7 +55,7 @@ if (APIkey == null){
 		}
 	} else {
 		if (items.response.result == "unauthorized"){
-			let widget = errorWidget("Invalid TeslaFi APIkey")
+			let widget = errorWidget("Invalid API url")
 			Script.setWidget(widget)
 			widget.presentSmall()
 			Script.complete()
@@ -565,7 +566,7 @@ function errorWidget(reason){
  
 async function loadItems() {
  
-	let url = "https://www.teslafi.com/feed.php?token="+APIkey+"&command=lastGood&encode=1"
+	let url = APIurl
 	let req = new Request(url)
 	let json = await req.loadJSON()
 	return json
