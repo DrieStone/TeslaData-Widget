@@ -475,14 +475,15 @@ function createWidget(items) {
 	}
 	if (show_range){
 		let units = "mi"
-		if (items.measure != "imperial") {units = "km"}
+		let distance_multiplier = 1; // imperial = 1, metric =  1.609
+		if (items.measure != "imperial") {units = "km"; distance_multiplier = 1.609;}
 		if (show_battery_percentage){ 
 			let carChargingSpacer1 = wRangeValue.addSpacer(null)		
 		}
 		if (show_range_est) { 
-			batteryCurrentCharge = Math.floor(items.est_battery_range)+units
+			batteryCurrentCharge = Math.floor(items.est_battery_range*distance_multiplier)+units
 		} else {
-			batteryCurrentCharge = Math.floor(items.battery_range)+units
+			batteryCurrentCharge = Math.floor(items.battery_range*distance_multiplier)+units
 		}
 		
 		let batteryCurrentRangeTxt = wRangeValue.addText(batteryCurrentCharge)
