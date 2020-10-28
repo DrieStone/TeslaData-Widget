@@ -17,7 +17,7 @@ You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://t
 API url: `https://www.teslafi.com/feed.php?token=YOUR_API_KEY&command=lastGood&encode=1`
 
 ### Other API
-If you use other tools like TeslaLogger, Tronity, etc. you only have to provide [json file](api.json) with the following data:
+If you use other tools like [TeslaLogger](https://github.com/bassmaster187/TeslaLogger), [Tronity](https://tronity.io/home/5OiA7SfA), etc. you only have to provide [json file](api.json) with the following data:
 
 `
 {
