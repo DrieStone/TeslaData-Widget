@@ -3,6 +3,7 @@
 ## Required
 
 * response : should be null unless there is an error
+* Date : the last contact with the vehicle (This can be almost any date format, but should include date and time, TelsaFi uses UTC style YYYY-MM-DDTHH:MM:SS)
 * battery_level : the current battery value (0-100)
 * usable_battery_level : the actual usable amount (0-100), this is used when the battery is cold
 * charge_limit_soc : the charge limit you have configured for the car (0-100)
