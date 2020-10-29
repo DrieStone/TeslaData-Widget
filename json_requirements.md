@@ -17,6 +17,7 @@
 * inside_tempF : the inside temperature of the car in F (only used if temperature == F)
 * driver_temp_settingF : the set temp for the climate control in F (only used if temperature == F)
 * measure : if the range/distance measurements are in km or m
-* battery_range : the range of the car in Miles
+* battery_range : the range of the car (as calculated by the car)
+* est_battery_range : the range of the car (as calculated by the logging service)
 * time_to_full_charge : how long until the car is fully charged
 * fast_charger_type : what kind of charger is attached. Should be "<invalid>" if the car is not connected to a charger (the widget only checks to see if it's attached, so the actual type is unimportant).
