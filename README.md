@@ -11,6 +11,10 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 * Create a small scriptable widget
 * Under widget options, select "TeslaData Widget" and enter the API url into the widget parameters
 
+### Optional
+* Download the tesla_themes directory to your iCloud/Scriptable folder
+* Edit the widget variable "custom_theme" to include the name of the theme you want to load (e.g. custom_theme = "3d" will load the 3d.js theme from the themes directory).
+
 ### TeslaFi API
 You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://teslafi.com/api.php).
 
