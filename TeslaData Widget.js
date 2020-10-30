@@ -21,7 +21,7 @@ const show_range_est = true // show range estimated instead of the car's range e
 const show_data_age = false // show how stale the data is
 const custom_theme = "" // if you want to load a theme (some available themes are "3d")
 
-const debug_data = ""; // this will force the widget to pull data from iCloud json files (put sample JSON in the 
+const debug_data = ""; // this will force the widget to pull data from iCloud json files (put sample JSON in the themes directory)
 
 // You can embed your APIurl here, or add it as a widget parameter
 //APIurl = "YOUR_API_URL" // hardcode the API url
