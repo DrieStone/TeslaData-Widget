@@ -70,11 +70,14 @@ This should support:
 
 ## Outstanding Bugs
 
-There appears to be an issue with SF graphics in Scriptable where the images are stretched. 
+- There appears to be an issue with SF graphics in Scriptable where the images are stretched.
+- Dark mode doesn't currently work for widgets in Scriptable.
 
 ## Notes for Developers
 
 Starting with v1.5 TeslaData now supports theming. The theme file is loaded right before the widget is drawn and displayed, so the theme can override any existing code (so you can change how things work without worrying about your code being overwritten with future updates of Tesla Data).
+
+Note: due to the way themes are includes, debugging information from Scriptable is lacking. For testing purposes, it is probably best to develop by adding code to the end of the main Javascript file, and moving the code to a theme file once the code is running properly.
 
 Starting with v1.5 The all colors are defined as an obect at the top of the file. These can be overriden if you want to make changes (you should use a theme file for this).
 
