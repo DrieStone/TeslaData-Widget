@@ -60,14 +60,13 @@ var colors = {
 		climate_cold:"#0000ff"
 	}
 }
-
-if (Device.isUsingDarkAppearance() && false){ // dark mode is not supported (this always returns true), this is in here in the hope that Scriptable will support dark mode at some point in the future.
+if (Device.isUsingDarkAppearance() && false){ // dark mode is not supported (you can remove "&& false" if you want to try), this is in here in the hope that Scriptable will support dark mode at some point in the future.
 	// override colors for darkmode
 	
-	colors.background = "#333333";
+	colors.background = "#000000";
 
-	colors.text.primary = "#ffffffaa";
-	colors.text.disabled = "#ffffff33";
+	colors.text.primary = "#ffffff";
+	colors.text.disabled = "#f0f0f0";
 
 	colors.battery.background = "#cccccc22";
 	colors.battery.max_charge = "#ffffff11";
@@ -535,22 +534,23 @@ battery_bar.init();
 
 
 // Add some backward compatibility to TeslaFi (if the APIurl is just a token, then assume it's a TeslaFi API key, otherwise, just use the URL
-if (!(APIurl.match(/\./g) || []).length){
+if (APIurl != null && APIurl != "" && !(APIurl.match(/\./g) || []).length){
 	APIurl = "https://www.teslafi.com/feed.php?token="+APIurl+"&command=lastGood&encode=1";
 }
 
-if ((APIurl.match(/teslafi/gi) || []).length){
+if (APIurl != null && APIurl != "" && (APIurl.match(/teslafi/gi) || []).length){
 	car_data.source = "TeslaFi"
 }
 
-if (APIurl == null){
+/*if (APIurl == null){
 
 	let widget = errorWidget("TeslaData Widget API url required")
 	Script.setWidget(widget)
 	widget.presentSmall()
 	Script.complete()
 
-} else {		
+
+} else {*/		
 	let response = await loadCarData(APIurl)	
 
 	if (response == "ok"){
@@ -564,7 +564,7 @@ if (APIurl == null){
 		widget.presentSmall()
 		Script.complete()
 	}
-}
+//}
 
 function createWidget(items) {
 	
@@ -624,39 +624,47 @@ function errorWidget(reason){
  
 async function loadCarData(url) {
  
-	// get the data from APIurl, then build our internal car_data object
-	var req = await new Request(url);
-	var backupManager = FileManager.local();
-	var backupLocation = backupManager.joinPath(backupManager.libraryDirectory(), "tesla_data.txt")
+	if (url != null && url != ""){
+ 
+		// get the data from APIurl, then build our internal car_data object
+		var req = await new Request(url);
+		var backupManager = FileManager.local();
+		var backupLocation = backupManager.joinPath(backupManager.libraryDirectory(), "tesla_data.txt")
 
 
-	if (debug_data==""){
-		try{
-			var json = await req.loadJSON();		
-			if (json.response == null){
-				var jsonExport = JSON.stringify(json);
-				backupManager.writeString(backupLocation,jsonExport);
+		if (debug_data==""){
+			try{
+				var json = await req.loadJSON();		
+				if (json.response == null){
+					var jsonExport = JSON.stringify(json);
+					backupManager.writeString(backupLocation,jsonExport);
+				}
+							
+			}catch(e){
+				// offline, grab the backup copy
+				var jsonImport = backupManager.readString(backupLocation);
+				var json = JSON.parse(jsonImport);
 			}
-						
-		}catch(e){
-			// offline, grab the backup copy
-			var jsonImport = backupManager.readString(backupLocation);
-			var json = JSON.parse(jsonImport);
+		} else {
+			// TeslaFi only allows 3 API calls per minute, so during testing, we can just pull test data from iCloud
+			
+			let debugManager = FileManager.iCloud()
+			debug_file = debugManager.joinPath(debugManager.documentsDirectory(),"tesla_themes/"+debug_data+".json");
+
+			if (debugManager.fileExists(debug_file)){
+				debugManager.downloadFileFromiCloud(debug_file);
+				var json = JSON.parse(debugManager.readString(debug_file));
+			} else {
+				var json = {"response":{"result":"That debug file doesn't exist"}};
+			}
 		}
 	} else {
-		// TeslaFi only allows 3 API calls per minute, so during testing, we can just pull test data from iCloud
-		
-		let debugManager = FileManager.iCloud()
-		debug_file = debugManager.joinPath(debugManager.documentsDirectory(),"tesla_themes/"+debug_data+".json");
-
-		if (debugManager.fileExists(debug_file)){
-			debugManager.downloadFileFromiCloud(debug_file);
-			var json = JSON.parse(debugManager.readString(debug_file));
-		} else {
-			var json = {"response":{"result":"That debug file doesn't exist"}};
-		}
+		var json = getSampleData(); // the user hasn't provided a url, so we'll show sample data
+		var now = new Date();
+		now.setTime(now.getTime() + 60000*5);
+		json.Date = now.toISOString();
+		console.log(json);
 	}
-	
 	
 	
 	//logError(json);
@@ -738,4 +746,26 @@ function scaleLines(lineArray,maxHeight,offsetX,offsetY){
 function scaleImage(imageSize,height){
 	scale = height/imageSize.height
 	return new Size(scale*imageSize.width,height)
+}
+
+function getSampleData(){
+	return {
+	   "response":null,
+	   "battery_level":27,
+	   "usable_battery_level":26,
+	   "charge_limit_soc":90,
+	   "carState":"Idling",
+	   "Date":"2020-10-28T14:57:15Z",
+	   "sentry_mode":0,
+	   "display_name":"No API Set",
+	   "locked":1,
+	   "is_climate_on":0,
+	   "inside_temp":14.6,
+	   "driver_temp_setting":22.0,
+	   "measure":"km",
+	   "est_battery_range":90.605842,
+	   "battery_range":125.2227454,
+	   "time_to_full_charge":0.0,
+	   "fast_charger_type":"<invalid>"
+	}
 }
