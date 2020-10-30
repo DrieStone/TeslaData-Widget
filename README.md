@@ -1,7 +1,7 @@
 # TeslaData Widget
 A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tronity to display a widget on your iPhone. 
 
-<img src="TeslaFi_Screen.v8.png" width="400" /> &nbsp; <img src="TeslaFi_Screen-B.v8.png" width="400" />
+<img src="documentation/TeslaFi_Screen.v8.png" width="400" /> &nbsp; <img src="documentation/TeslaFi_Screen-B.v8.png" width="400" />
 
 ## Usage
 ### General
@@ -17,7 +17,7 @@ You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://t
 API url: `https://www.teslafi.com/feed.php?token=YOUR_API_KEY&command=lastGood&encode=1`
 
 ### Other API
-If you use other tools like [TeslaLogger](https://github.com/bassmaster187/TeslaLogger), [Tronity](https://tronity.io/home/5OiA7SfA), etc. you only have to provide [json file](api.json) with the following data ([more details on the required fields](json_requirements.md)):
+If you use other tools like [TeslaLogger](https://github.com/bassmaster187/TeslaLogger), [Tronity](https://tronity.io/home/5OiA7SfA), etc. you only have to provide [json file](documentation/sample.json) with the following data ([more details on the required fields](documentation/json_requirements.md)):
 
 `
 {
