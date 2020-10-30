@@ -62,15 +62,42 @@ This should support:
 * interior temperature
 * sentry mode on
 * sleeping, idle, driving indicator
-* time since TeslaFi retreived data from the car (respects sleep)
+* time since the data was retreived from the car (respects TeslaFi sleep)
 
 ## Outstanding Bugs
 
 There appears to be an issue with SF graphics in Scriptable where the images are stretched. 
 
+## Notes for Developers
+
+Starting with v1.5 TeslaData now supports theming. The theme file is loaded right before the widget is drawn and displayed, so the theme can override any existing code (so you can change how things work without worrying about your code being overwritten with future updates of Tesla Data).
+
+Starting with v1.5 The all colors are defined as an obect at the top of the file. These can be overriden if you want to make changes (you should use a theme file for this).
+
+Starting with v1.5 TeslaData will optionally pull JSON files from iCloud for testing purposes. Place your JSON files in the tesla_themes directory on iCloud, and tell the widget to pull the data by modifying the debug_data string (i.e. debug_data = "standard" will load the "standard.json" file and ignore the URL).
+
+
 ## Changelog
 
-- v1.0 use apiurl parameter instead apikey, rename to TeslaData widget. Fixed issue where disance value wasn't correct for metric.
-- v0.8 added color coded snowflake to show if we're heating or cooling. Added target temperature to display when preheating/cooling. Added charging icon to show when the charger is connected (but not currently charging). Added metric range display (untested). Added internal temperature showing faded when the data is more than 2 hours old (since the internal temp is probably invalid). Added usable vs. total charge (for colder weather).
-- v0.7 added custom bolt icon for charging so I could add a stroke, changed charging color. Adjusted 3D styling, added time since last communication with the car.  
-- v0.6 initial release added to GitHub  
+- v1.5 
+   - Complete rewrite of the code for cleanliness.
+   - Many fields are no longer required (but still preferred)
+   - Added code to store a copy of the last data, so the widget doesn't error when the device doesn't have network
+   - Added support for themes (and moved 3d bars into a theme)
+- v1.0 
+   - Use apiurl parameter instead apikey (now supports any JSON source)
+   - Renamed to TeslaData widget.
+   - Fixed issue where disance value wasn't correct for metric.
+- v0.8 
+   - Added color coded snowflake to show if we're heating or cooling.
+   - Added target temperature to display when preheating/cooling.
+   - Added charging icon to show when the charger is connected (but not currently charging).
+   - Added metric range display (untested).
+   - Added internal temperature showing faded when the data is more than 2 hours old (since the internal temp is probably invalid).
+   - Added usable vs. total charge (for colder weather).
+- v0.7 
+   - Added custom bolt icon for charging so I could add a stroke, changed charging color.
+   - Adjusted 3D styling
+   - Added time since last communication with the car.  
+- v0.6 
+   - Initial release added to GitHub  
