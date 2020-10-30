@@ -3,7 +3,7 @@
 // icon-color: red; icon-glyph: charging-station;
 
 // TeslaData Widget
-// Version 1.0
+// Version 1.5
 // Jon Sweet (jon@driestone.com)
 // Tobias Merkl (@tabsl)
 //
@@ -18,533 +18,587 @@ let APIurl = args.widgetParameter
 const show_battery_percentage = true // show the battery percentage above the battery bar
 const show_range = true // show the estimated range above the battery bar
 const show_range_est = true // show range estimated instead of the car's range estimate
-const battery_display_3D = false // show a 3D version of the battery bar
-const show_data_age = true // show how stale the data is
+const show_data_age = false // show how stale the data is
+const custom_theme = "" // if you want to load a theme (some available themes are "3d")
 
-// You can imbed your APIurl here, or add it as a widget parameter
+const debug_data = ""; // this will force the widget to pull data from iCloud json files (put sample JSON in the 
+
+// You can embed your APIurl here, or add it as a widget parameter
 //APIurl = "YOUR_API_URL" // hardcode the API url
 
-const debugMode = false
-
-// Add some backward compatibility to TeslaFi (if the APIurl is just a token, then assume it's a TeslaFi API key, otherwise, just use the URL
-if (!(APIurl.match(/\./g) || []).length){APIurl = "https://www.teslafi.com/feed.php?token="+APIurl+"&command=lastGood&encode=1";}
-
-
-let chargingColor = new Color("#ddbb22")
-
+// a little helper to try to estimate the size of the widget
 deviceScreen = Device.screenSize()
-let padding = ((deviceScreen.width - 240) /5)
-let widgetSize = new Size(padding + 110, padding + 110)
+let gutter_size = ((deviceScreen.width - 240) /5) // if we know the size of the screen, and the size of icons, we can estimate the gutter size
+let widgetSize = new Size(gutter_size + 110, gutter_size + 110) // small widget size
 
-if (APIurl == null){
-	let widget = errorWidget("TeslaData Widget API url required")
-	Script.setWidget(widget)
-	widget.presentSmall()
-	Script.complete()
 
-} else {
-		
-	let items = await loadItems()	
-
-	if (items.response == null){
-		if (config.runsInWidget || true) {
-		  let widget = createWidget(items)
-		  Script.setWidget(widget)
-		  widget.presentSmall()
-		  Script.complete()
-		} else {
-		  let item = items[0]
-		  Safari.open(item.url)
-		}
-	} else {
-		if (items.response.result == "unauthorized"){
-			let widget = errorWidget("Invalid API url")
-			Script.setWidget(widget)
-			widget.presentSmall()
-			Script.complete()
-			
-		} else {
-			logError(items.response.result)
-		}
+// set up all the colors we want to use
+var colors = {
+	background:"#dddddd",
+	background_status:"#ffffff33",
+	text:{		
+		primary:"#333333cc",
+		disabled:"#33333344"
+	},
+	battery:{
+		background:"#33333355",
+		max_charge:"#00000033",
+		charging:"#ddbb22",
+		cold_charge:"#3172D4",//"#3172D4",
+		usable_charge:"#2BD82E",
+		highlight:"#ffffff",
+		border:"#333333cc",
+		separator:"#333333cc"
+	},
+	icons:{
+		default:"#33333399",
+		disabled:"#33333344",
+		charging_bolt:"#ddbb22",
+		charging_bolt_outline:"#33333388",
+		sentry_dot:"#ff0000",
+		climate_hot:"#ff0000",
+		climate_cold:"#0000ff"
 	}
 }
 
-function createWidget(items) {
-	let w = new ListWidget()
-	w.setPadding(5,5,5,5)
-	w.url = "remotes://" // this doesn't seem to work currently
-	//w.url = "http://tesla.com"
-	let myGradient = new LinearGradient()
-	textColor = new Color("#333333cc")
-	inactiveColor = new Color("#33333366")
+if (Device.isUsingDarkAppearance() && false){ // dark mode is not supported (this always returns true), this is in here in the hope that Scriptable will support dark mode at some point in the future.
+	// override colors for darkmode
+	
+	colors.background = "#333333";
 
-	if (Device.isUsingDarkAppearance() && false){
-		// darkmode
-		w.backgroundColor = new Color("#333")
-		myGradient.colors = [new Color("#bbbbbb11"), new Color("#ffffff00")]
-		myGradient.locations = [0,0.3]
-		textColor = new Color("#cccccccc")
-		inactiveColor = new Color("#cccccc99")
-	} else {
-		// lightmode
-		w.backgroundColor = new Color("#ccc")
-		myGradient.colors = [new Color("#44444411"), new Color("#ffffff00")]
-		myGradient.locations = [0,0.3]
+	colors.text.primary = "#ffffffaa";
+	colors.text.disabled = "#ffffff33";
+
+	colors.battery.background = "#cccccc22";
+	colors.battery.max_charge = "#ffffff11";
+	colors.battery.border = "#cccccc55";
+	colors.battery.usable_charge = "#2B972D";
+	//colors.battery.cold_charge = "#557BB4";
+	colors.battery.highlight = "#ffffff44";
+
+	colors.icons.default = "#ffffff99";
+	colors.icons.disabled = "#ffffff44";
+}
+
+// set up a container for our data. 
+
+//NOTE: these values may not align with the data names from our service. Review the documention for the expected values and their names.
+
+var car_data = {
+	source:"Unknown",
+	theme:custom_theme,
+	last_contact:"",
+	data_is_stale:false, // if the data is especially old (> 2 hours)
+	car_name:"Tesla",
+	battery_level:-1,
+	usable_battery_level:-1,
+	battery_limit:-1,
+	battery_range:-1,
+	est_battery_range:-1,
+	distance_label:"km",
+	car_state:"Unknown",
+	sentry_mode:false,
+	doors_locked:true,
+	climate_active:false,
+	inside_temp:10000,
+	temp_setting:10000,
+	temp_label:"c",
+	time_to_charge:10000,
+	charger_attached:false,
+	postLoad:function(){
+		// update data where required after load
+		if (this.distance_label == "km" && this.source == "TeslaFi"){
+			// convert battery_range to metric if data comes from TeslaFi
+			this.battery_range *= 1.309; 
+			this.est_battery_range *= 1.309; 
+		}	
 	}
-	w.backgroundGradient = myGradient
+};
 
-// BUILD BACKGROUND IMAGE (THIS DOESN'T WORK RIGHT NOW
-
-/*	let backgroundContext = new DrawContext()
-	backgroundContext.opaque = false
-	backgroundContext.size = new Size(300,300)
-	backgroundContext.setFillColor = new Color("#ff0000",0.3)
-	backgroundContext.setStrokeColor = new Color("#ff0000",0.3)
-	backgroundContext.setLineWidth(5)
-	backgroundContext.fillEllipse(new Rect(0,0,75,100))
-	backgroundContext.strokeRect(new Rect(20,20,100,100))
-	w.backgroundImage = backgroundContext.getImage()
-*/
-
-
-
-//logError(items.usable_battery_level+"/"+items.battery_level)
-
-// BUILD BATTERY BAR
-
-	const batteryPath = new Path()
-	batteryPath.addRoundedRect(new Rect(1,1,widgetSize.width-2,18),7,7)
-
-	const batteryPathInset = new Path()
-	batteryPathInset.addRoundedRect(new Rect(2,2,widgetSize.width-4,16),7,7)
-
-	batteryAmount = Number(items.battery_level)*(widgetSize.width-2)/100
-	usableBatteryAmount = Number(items.usable_battery_level)*(widgetSize.width-2)/100
-	maxChargeAmount = Number(items.charge_limit_soc)*(widgetSize.width-2)/100
-
-	let myDrawContext = new DrawContext()
-	myDrawContext.opaque = false
-	myDrawContext.size = new Size(widgetSize.width,20)
-
-	myDrawContext.addPath(batteryPath)
-	myDrawContext.setFillColor(new Color("#33333355"))
-	myDrawContext.fillPath()
-
-//	Build a bar for the max charge state as configured
-	let batteryMaxCharge  = new DrawContext()  
-	batteryMaxCharge.opaque = false
-	batteryMaxCharge.size = new Size(maxChargeAmount,20)
-	batteryMaxCharge.setFillColor(new Color("#00000033"))
-	if (Device.isUsingDarkAppearance()){
-		batteryMaxCharge.setFillColor(new Color("#ffffff33"))		
-	}
-	if (items.carState == "Charging"){
-		batteryMaxCharge.setFillColor(chargingColor)
-	}
-	batteryMaxCharge.addPath(batteryPath)
-	batteryMaxCharge.fillPath()
+var theme = {
+	init:function(){
+	
+	},
+	draw:function(widget,car_data,colors){
+		widget.setPadding(5,5,5,5)
 		
-	batteryMaxChargeImage = batteryMaxCharge.getImage()
-	myDrawContext.drawImageAtPoint(batteryMaxChargeImage,new Point(0,0))
-	
-	if (usableBatteryAmount < batteryAmount && usableBatteryAmount > 1){
-		// if the battery is cold, then the usable amount is less than the total amount. 
-		//logError("show usable")
-		let batteryFullUnusable = new DrawContext()  
-		batteryFullUnusable.opaque = false
-		batteryFullUnusable.size = new Size(batteryAmount,20)
+		widget.backgroundColor = new Color(colors.background)
+		
+		//let wBody = widget.addStack()
+		//wBody.layoutVertically()
+		
+		this.drawCarStatus(widget, car_data, colors);
+		this.drawCarName(widget, car_data, colors);
+		this.drawStatusLights(widget, car_data, colors);
+		this.drawRangeInfo(widget, car_data, colors);
+		this.drawBatteryBar(widget, car_data, colors);
 
-		batteryFullUnusable.setFillColor(new Color("#3172D4"))
-		batteryFullUnusable.addPath(batteryPath)
-		batteryFullUnusable.fillPath()
+	}	
+}
 
-		myDrawContext.drawImageAtPoint(batteryFullUnusable.getImage(),new Point(0,0))
-		usableBatteryAmount -= 3 // make the usable battery display a bit smaller so our blue bar isn't just a sliver
-	}
-
-	if (usableBatteryAmount>1){
-		// if there's at least some battery, build the current charge state bar
-		let batteryFull = new DrawContext()  
-		batteryFull.opaque = false
-		batteryFull.size = new Size(usableBatteryAmount,20)
-
-		batteryFull.setFillColor(new Color("#2BD82E"))
-		batteryFull.addPath(batteryPath)
-		batteryFull.fillPath()
-
-
-
-		let highlightWidth = usableBatteryAmount-10;
-		if (highlightWidth>4 && battery_display_3D){
-
-			const batteryHighlight = new Path()
-			batteryHighlight.addRoundedRect(new Rect(5,6,usableBatteryAmount-8,3),1,1)
-
-			batteryFull.setFillColor(new Color("#ffffff",0.3))
-			batteryFull.addPath(batteryHighlight)
-			batteryFull.fillPath()
-			
-			batteryFull.setFillColor(new Color("#ffffff",0.3))
-			batteryFull.fillEllipse(new Rect(7,6,usableBatteryAmount/4,4))
-			batteryFull.fillEllipse(new Rect(6,6,usableBatteryAmount/8,6))
-			batteryFull.fillEllipse(new Rect(5,6,usableBatteryAmount/12,8))
-
-			batteryFull.fillEllipse(new Rect(usableBatteryAmount-10,6,5,3))
-	
-
-		}
-
-
-		if (battery_display_3D){
-			batteryFull.addPath(batteryPathInset)
-			batteryFull.setStrokeColor(new Color("#00000055"))
-			batteryFull.setLineWidth(2)
-			batteryFull.strokePath()
-			myDrawContext.addPath(batteryPathInset)
-			myDrawContext.setStrokeColor(new Color("#00000022"))
-			myDrawContext.setLineWidth(4)
-			myDrawContext.strokePath()
-		}
-
-		myFullBatteryImage = batteryFull.getImage()
-		myDrawContext.drawImageAtPoint(myFullBatteryImage,new Point(0,0))
-
-	if (Number(items.battery_level)<99){
-			myDrawContext.setFillColor(inactiveColor)
-			myDrawContext.fillRect(new Rect(batteryAmount,1,1,18))
-			if (usableBatteryAmount != batteryAmount){
-				myDrawContext.fillRect(new Rect(usableBatteryAmount,1,1,18))
-			}
-			
-			if (battery_display_3D){
-				myDrawContext.setFillColor(new Color("#00000022"))
-				myDrawContext.fillRect(new Rect(batteryAmount+1,1,3,18))
-
-			}
-
-		}
-	}
-
-
-	myDrawContext.addPath(batteryPath)// have to add the path again for some reason
-	myDrawContext.setStrokeColor(textColor)
-	myDrawContext.setLineWidth(1)
-	myDrawContext.strokePath()
-
-	batteryBarData = myDrawContext.getImage()
-
-// build that actual widget
-
-	let wBody = w.addStack()
-	wBody.layoutVertically()
-
-// the car status (idle,charging,sleeping, sentry mode)
-	let wState = w.addStack()
-	wState.size = new Size(widgetSize.width,widgetSize.height*0.20)
-	wState.topAlignContent()
-	wState.setPadding(0,6,0,6)
-
-// the car's name
-	let wContent = w.addStack()
-	wContent.size = new Size(widgetSize.width,widgetSize.height*0.25)
-	wContent.centerAlignContent()
-	wContent.setPadding(0,3,5,3)
-
-// the various status lights (locked, interior temp)
-	let wControls = w.addStack()
-	wControls.size = new Size(widgetSize.width,widgetSize.height*0.20)
-	wControls.bottomAlignContent()
-	wControls.backgroundColor = new Color("#ffffff33")
-	wControls.cornerRadius = 3
-	wControls.centerAlignContent()
-	wControls.setPadding(3,10,3,10)
-
-// the text of any range info
-	let wRangeValue = w.addStack()
-	wRangeValue.size = new Size(widgetSize.width,widgetSize.height*0.15)
-	wRangeValue.centerAlignContent()
-	wRangeValue.setPadding(5,10,0,10)
-
-// the battery bar display
-	let wBattery = w.addStack()
-	wBattery.size = new Size(widgetSize.width,widgetSize.height*0.20)
-	wBattery.topAlignContent()
-	wBattery.setPadding(3,0,0,0)
-	
-// outline the stacks so we can see the layout if we're in debug mode
-	if (debugMode){
-		wState.borderWidth = 1
-		wContent.borderWidth = 1
-		wRangeValue.borderWidth = 1
-		wBattery.borderWidth = 1
-	}
-
-
-
-// Build the car state icon
-	
-	symbolToUse = "questionmark.circle.fill"
-
-	let symColor = inactiveColor
-
-	switch(items.carState){
-		case "Sleeping":
-			symbolToUse = "moon.zzz.fill"
-			break;
-		case "Idling":
-			symbolToUse = "p.square.fill"
-			break;
-		case "Driving":
-			symbolToUse = "car.fill"
-			break;
-		case "Charging":
-			break;
-		default:
-			logError(items.carState)
-	}
-	let statusSymbol = SFSymbol.named(symbolToUse)
-	statusSymbolImage = statusSymbol.image
+theme.drawCarStatus = function(widget,car_data,colors){
+	let stack = widget.addStack();
+	stack.size = new Size(widgetSize.width,widgetSize.height*0.20);
+	stack.topAlignContent();
+	stack.setPadding(0,6,0,6);
 
 	let timeDiff = 0
-	if (show_data_age){
-		let lastUpdateString = ""
-		let lastUpdate = new Date(items.Date.replace(" ","T"))
-		let now = new Date()
-		timeDiff = Math.round((Math.abs(now - lastUpdate))/(1000 * 60))
-		if (timeDiff < 60) {
-			// been less than an hour since last update
-			lastUpdateString = timeDiff+"m ago"
-		} else if(timeDiff < 1440){
-			lastUpdateString = Math.floor(timeDiff/60)+"h ago"
-		} else {
-			lastUpdateString = Math.floor(timeDiff/1440)+"d ago"
-		}
-		let lastUpdateText = wState.addText(lastUpdateString)
-		lastUpdateText.textColor = textColor
+	if (car_data.last_contact.length > 0){
+		let lastUpdateText = stack.addText(car_data.last_contact)
+		lastUpdateText.textColor = new Color(colors.text.primary);
 		lastUpdateText.textOpacity = 0.4
 		lastUpdateText.font = Font.systemFont(12)
 		lastUpdateText.leftAlignText()
+	
+	}
+	let carStateSpacer = stack.addSpacer(null)
+	if (car_data.sentry_mode){
+		sentryModeIcon = this.getSentryModeIcon(colors);
+		var carState = stack.addImage(sentryModeIcon);
+		carState.imageSize = scaleImage(sentryModeIcon.size,20)
+		carState.rightAlignImage()
+	} switch (car_data.car_state){
+		case "Sleeping":{
+			sleepingIcon = this.getSleepingIcon(colors);
+			var carState = stack.addImage(sleepingIcon);
+			carState.tintColor = new Color(colors.icons.default);
+			carState.imageSize = scaleImage(sleepingIcon.size,20);
+			carState.rightAlignImage();
+			break;
+		}
+		case "Idling":{
+			idlingIcon = this.getIdlingIcon(colors);
+			var carState = stack.addImage(idlingIcon);
+			carState.tintColor = new Color(colors.icons.default);
+			carState.imageSize = scaleImage(idlingIcon.size,20);
+			carState.rightAlignImage();
+			break;
+		}
+		case "Driving":{
+			drivingIcon = this.getDrivingIcon(colors);
+			var carState = stack.addImage(drivingIcon);
+			carState.tintColor = new Color(colors.icons.default);
+			carState.imageSize = scaleImage(drivingIcon.size,20);
+			carState.rightAlignImage();
+			break;
+		}
+		case "Charging":{	
+			chargingIcon = this.getChargingIcon(colors);
+			var carState = stack.addImage(chargingIcon);
+			carState.imageSize = scaleImage(chargingIcon.size,20);
+			carState.rightAlignImage();
+			break;
+		}
+		default:{
+			
+		}
 		
 	}
-	let carStateSpacer = wState.addSpacer(null)
 
+}
 
-	if (items.sentry_mode == 1){
-		//sentry mode is on
+{ // helper functions to draw things for car status
+
+	theme.getSleepingIcon = function(colors){
+		symbolToUse = "moon.zzz.fill";
+		let statusSymbol = SFSymbol.named(symbolToUse);
+		return statusSymbol.image;
+	}
+
+	theme.getIdlingIcon = function(colors){
+		symbolToUse = "p.square.fill";
+		let statusSymbol = SFSymbol.named(symbolToUse);
+		return statusSymbol.image;
+	}
+
+	theme.getDrivingIcon = function(colors){
+		symbolToUse = "car.fill";
+		let statusSymbol = SFSymbol.named(symbolToUse);
+		return statusSymbol.image;
+	}
+
+	theme.getChargingIcon = function(colors){
+		let iconHeight = 17;
+		
+		let carChargingImageContext = new DrawContext()  
+		carChargingImageContext.opaque = false
+		carChargingImageContext.size = new Size(12,iconHeight)
+
+		let boltLines = [[5,0],[0,7],[3,7],[2,12],[7,5],[4,5]];
+		const boltIcon = new Path()
+		boltIcon.addLines(scaleLines(boltLines,iconHeight-2,1,1));
+		boltIcon.closeSubpath()
+		
+		carChargingImageContext.addPath(boltIcon)
+		carChargingImageContext.setLineWidth(2)
+		carChargingImageContext.setStrokeColor(new Color(colors.icons.charging_bolt_outline))
+		carChargingImageContext.strokePath()
+		carChargingImageContext.addPath(boltIcon)
+		carChargingImageContext.setFillColor(new Color(colors.icons.charging_bolt))
+		carChargingImageContext.fillPath()
+
+		return carChargingImageContext.getImage();
+
+	}
+
+	theme.getSentryModeIcon = function(colors){
+
 		sentrySymbol = SFSymbol.named("sun.min.fill")
 		sentrySymbolImage = sentrySymbol.image
 
 		let sentryModeContext = new DrawContext()  
 		sentryModeContext.opaque = false
 		sentryModeContext.size = sentrySymbolImage.size
-		//sentryModeContext.tintColor = symColor
 		sentryModeContext.imageOpacity = 0.8
 		sentryModeContext.drawImageAtPoint(sentrySymbolImage,new Point(0,0))
 		
-		sentryModeContext.setFillColor(Color.red())
-		sentryModeContext.fillEllipse(new Rect(6,6,7,7))
-		
-		sentryModeImage = sentryModeContext.getImage()
+		sentryModeContext.setFillColor(new Color(colors.icons.sentry_dot))
+		sentryModeContext.fillEllipse(new Rect(6,6,7,7))		
 
-		let carState = wState.addImage(sentryModeImage)
-		carState.imageSize = scaleImage(sentryModeImage.size,20)
-		carState.rightAlignImage()
-		//carState.imageOpacity = 0.8
-		//symColor = Color.red()
-	} else if (items.carState == "Charging") {
-		// car is charging
-
-		let carChargingImageContext = new DrawContext()  
-		carChargingImageContext.opaque = false
-		carChargingImageContext.size = new Size(12,18)
-
-		const boltIcon = new Path()
-		boltIcon.addLines([new Point(8.1,1),new Point(1,10.9), new Point (5.3,10.9), new Point (3.8,18), new Point (10.9,8.1), new Point(6.7,8.1)])
-		boltIcon.closeSubpath()
-		
-		carChargingImageContext.addPath(boltIcon)
-		carChargingImageContext.setLineWidth(2)
-		carChargingImageContext.setStrokeColor(new Color("#33333399"))
-		carChargingImageContext.strokePath()
-		carChargingImageContext.addPath(boltIcon)
-		carChargingImageContext.setFillColor(chargingColor)
-		carChargingImageContext.fillPath()
-	
-
-		carChargingImage = carChargingImageContext.getImage()
-
-		let carState = wState.addImage(carChargingImage)
-		carState.rightAlignImage()
-		
-	} else { 
-		let carState = wState.addImage(statusSymbolImage)
-		carState.imageSize = scaleImage(statusSymbol.image.size,20)
-		carState.tintColor = symColor
-		carState.rightAlignImage()
-
+		return sentryModeContext.getImage();
 	}
-	
+}
 
-
-
-// Build the car name
-	let carName = wContent.addText(items.display_name)
-	carName.textColor = textColor
+theme.drawCarName = function(widget,car_data,colors){
+	let stack = widget.addStack();
+	stack.size = new Size(widgetSize.width,widgetSize.height*0.25);
+	stack.centerAlignContent();
+	stack.setPadding(0,3,5,3);
+		
+	let carName = stack.addText(car_data.car_name);
+	carName.textColor = new Color(colors.text.primary);
 	carName.centerAlignText()
 	carName.font = Font.semiboldSystemFont(24)
 	carName.minimumScaleFactor = 0.5
+}
 
-
-// Build the status lights
-	symbolToUse = ""
-	if (items.locked == 1){
-		symbolToUse = "lock.fill"
+theme.drawStatusLights = function(widget,car_data,colors){
+	let stack = widget.addStack();
+	stack.size = new Size(widgetSize.width,widgetSize.height*0.20);
+	stack.setPadding(3,10,3,10);
+	stack.backgroundColor = new Color(colors.background_status);;
+	stack.cornerRadius = 3;
+	stack.centerAlignContent();
+	
+	if (car_data.doors_locked){
+		var carControlLockIconImage = this.getLockedIcon();
 	} else {
-		symbolToUse = "lock.open.fill"
-	}	
-	lockSymbol = SFSymbol.named(symbolToUse)
-	let carControlIconLock = wControls.addImage(lockSymbol.image)
-	//logError(lockSymbol.image.size)
-	carControlIconLock.imageSize = scaleImage(lockSymbol.image.size,12)	
-	carControlIconLock.containerRelativeShape = true
-	carControlIconLock.tintColor = textColor
-	carControlIconLock.borderWidtrh = 1
-	carControlIconLock.imageOpacity = 0.8
-	let carControlSpacer = wControls.addSpacer(null)
-
-	climateOpacity = 0.8
-	if ((timeDiff/60) > 2){
-		//logError (timeDiff/60)
-		climateOpacity = 0.2 // make it super dim after 2 hours of data stale data
+		var carControlLockIconImage = this.getUnlockedIcon();
 	}
-	climateSymbol = SFSymbol.named("snow")
-	let carControlIconClimate = wControls.addImage(climateSymbol.image)
-	//logError(lockSymbol.image.size)
-	carControlIconClimate.imageSize = scaleImage(lockSymbol.image.size,14)	
-	carControlIconClimate.containerRelativeShape = true
-	carControlIconClimate.tintColor = textColor
-	carControlIconClimate.borderWidtrh = 1
-	carControlIconClimate.imageOpacity = climateOpacity
-	if (items.is_climate_on == 1){
-		if (items.inside_temp < items.driver_temp_setting){
-			carControlIconClimate.tintColor = Color.red(); // show the temp setting in red to show heating
-		} else {
-			carControlIconClimate.tintColor = Color.blue(); // show the temp setting in blue to show cooling
+	let carControlLockIcon = stack.addImage(carControlLockIconImage);
+	carControlLockIcon.imageSize = scaleImage(carControlLockIconImage.size,12)	
+	carControlLockIcon.containerRelativeShape = true
+	carControlLockIcon.tintColor = new Color(colors.icons.default);
+	carControlLockIcon.borderWidtrh = 1
+	carControlLockIcon.imageOpacity = 0.8
+	let carControlSpacer = stack.addSpacer(null)
+	
+	if (car_data.inside_temp < 1000){ // if we have a temp for interior
+		let climateOpacity = 1.0;
+		if (car_data.data_is_stale) { climateOpacity = 0.3; } // after 2 hours the climate info isn't really valid
+		carClimateControlIconImage = this.getClimateIcon();
+		let carClimateControlIcon = stack.addImage(carClimateControlIconImage);
+		carClimateControlIcon.imageSize = scaleImage(carClimateControlIcon.image.size,14)	
+		carClimateControlIcon.containerRelativeShape = true
+		carClimateControlIcon.tintColor = new Color(colors.icons.default);
+		carClimateControlIcon.borderWidtrh = 1
+		carClimateControlIcon.imageOpacity = climateOpacity
+	
+		var climateText = " "+car_data.inside_temp+"°";
+		
+		if (car_data.climate_active && car_data.temp_setting < 1000){
+			if (car_data.inside_temp < car_data.temp_setting){
+				// the car is heating
+				carClimateControlIcon.tintColor = new Color(colors.icons.climate_hot);
+			} else {
+				carClimateControlIcon.tintColor = new Color(colors.icons.climate_cold);			
+			}
+			climateText += " ➝ "+car_data.temp_setting+"°";
 		}
-		carControlIconClimate.imageOpacity = 0.8
+		let carTemp = stack.addText(climateText)
+		carTemp.textColor = new Color(colors.icons.default);
+		carTemp.font = Font.systemFont(15)
+		carTemp.textOpacity = climateOpacity
 	}
-	//let carControlSpacer2 = wControls.addSpacer(null)
-	let carTempText = ""
+		
+}
 
-	if (items.temperature == "F"){
-		if (items.is_climate_on == 1 && Math.abs(items.driver_temp_settingF - items.inside_tempF) > 0){
-			carTempText = " "+items.inside_tempF+"° ➝ "+items.driver_temp_settingF+"°"
-		} else {
-			carTempText = " "+items.inside_tempF+"°"
-		}
-	} else {
-		if (items.is_climate_on == 1 && Math.abs(items.driver_temp_setting - items.inside_temp) > 0){
-			carTempText = " "+items.inside_temp+"° ➝ "+items.driver_temp_setting+"°"
-		} else {
-			carTempText = " "+items.inside_temp+"°"	
-		}
+{ // helper functions to draw things for status lights
+
+	theme.getLockedIcon = function(){
+		lockSymbol = SFSymbol.named("lock.fill");
+		return lockSymbol.image;
 	}
-	let carTemp = wControls.addText(carTempText)
-	carTemp.textColor = textColor
-	carTemp.font = Font.systemFont(15)
-	carTemp.textOpacity = climateOpacity
+
+	theme.getUnlockedIcon = function(){
+		unlockSymbol = SFSymbol.named("lock.open.fill");
+		return unlockSymbol.image;
+	}
+
+	theme.getClimateIcon = function(){
+		unlockSymbol = SFSymbol.named("snow");
+		return unlockSymbol.image;
+	}
 
 
+}
 
-// build the charge state text
-
+theme.drawRangeInfo = function(widget,car_data,colors){
+	let stack = widget.addStack();
+	stack.size = new Size(widgetSize.width,widgetSize.height*0.15);
+	stack.centerAlignContent();
+	stack.setPadding(5,10,0,10);
+	
 	let batteryCurrentCharge = ""
-	if (show_battery_percentage){ 
-		batteryCurrentCharge = items.usable_battery_level + "%"
-		if (items.usable_battery_level < items.battery_level){
-			batteryCurrentCharge = items.usable_battery_level+"/"+items.battery_level+"%"
+	if (show_battery_percentage && car_data.usable_battery_level > -1){ 
+		batteryCurrentCharge = car_data.usable_battery_level + "%"
+		if (car_data.usable_battery_level < car_data.battery_level){
+			batteryCurrentCharge = car_data.usable_battery_level+"/"+car_data.battery_level+"%"
 		}
-		if (items.carState == "Charging" && show_range){
+		if (car_data.carState == "Charging" && show_range){
 			// we need to show a reduced size since there's not enough room
-			batteryCurrentCharge = items.battery_level + "%"
+			batteryCurrentCharge = car_data.battery_level + "%"
 		}
 		
-		let batteryCurrentChargePercentTxt = wRangeValue.addText(batteryCurrentCharge)
-		batteryCurrentChargePercentTxt.textColor = textColor
+		let batteryCurrentChargePercentTxt = stack.addText(batteryCurrentCharge)
+		batteryCurrentChargePercentTxt.textColor = new Color(colors.text.primary);
 		batteryCurrentChargePercentTxt.textOpacity = 0.6
 		batteryCurrentChargePercentTxt.font = Font.systemFont(12)
 		batteryCurrentChargePercentTxt.centerAlignText()
 
 	}
-	if (show_range){
-		let units = "mi"
-		let distance_multiplier = 1; // imperial = 1, metric =  1.609
-		if (items.measure != "imperial") {units = "km"; distance_multiplier = 1.609;}
+	if (show_range && car_data.battery_range > -1){
 		if (show_battery_percentage){ 
-			let carChargingSpacer1 = wRangeValue.addSpacer(null)		
+			let carChargingSpacer1 = stack.addSpacer(null)		
 		}
-		if (show_range_est) { 
-			batteryCurrentCharge = Math.floor(items.est_battery_range*distance_multiplier)+units
-		} else {
-			batteryCurrentCharge = Math.floor(items.battery_range*distance_multiplier)+units
+		batteryCurrentCharge = ""+Math.floor(car_data.battery_range)+car_data.distance_label;
+		if (show_range_est && car_data.est_battery_range > -1) { 
+			batteryCurrentCharge = ""+Math.floor(car_data.est_battery_range)+car_data.distance_label;
+		} 			
+		if (batteryCurrentCharge.length>0){			
+			let batteryCurrentRangeTxt = stack.addText(batteryCurrentCharge)
+			batteryCurrentRangeTxt.textColor = new Color(colors.text.primary);
+			batteryCurrentRangeTxt.textOpacity = 0.6
+			batteryCurrentRangeTxt.font = Font.systemFont(12)
+			batteryCurrentRangeTxt.centerAlignText()
 		}
-		
-		let batteryCurrentRangeTxt = wRangeValue.addText(batteryCurrentCharge)
-		batteryCurrentRangeTxt.textColor = textColor
-		batteryCurrentRangeTxt.textOpacity = 0.6
-		batteryCurrentRangeTxt.font = Font.systemFont(12)
-		batteryCurrentRangeTxt.centerAlignText()
 	
 	}
-
- 
-	if (items.carState == "Charging"){
+	
+	
+	
+	if (car_data.car_state == "Charging"){
 		if (show_battery_percentage || show_range){
-			let carChargingSpacer2 = wRangeValue.addSpacer(null)
+			let carChargingSpacer2 = stack.addSpacer(null);
 		}
+
 
 		// currently charging
-		minutes = Math.round((items.time_to_full_charge - Math.floor(items.time_to_full_charge)) * 12) * 5
+		minutes = Math.round((car_data.time_to_charge - Math.floor(car_data.time_to_charge)) * 12) * 5;
 		if (minutes < 10) {minutes = "0" + minutes}
-		chargingSymbol = SFSymbol.named("bolt.circle.fill")
-		let carControlIconBolt = wRangeValue.addImage(chargingSymbol.image)
-		carControlIconBolt.imageSize = scaleImage(chargingSymbol.image.size,12)
-		carControlIconBolt.tintColor = textColor
-		carControlIconBolt.imageOpacity = 0.8
-		
-		let carChargeCompleteTime = wRangeValue.addText(" "+Math.floor(items.time_to_full_charge)+":"+minutes)
-		carChargeCompleteTime.textColor = textColor
-		carChargeCompleteTime.font = Font.systemFont(12)
-		carChargeCompleteTime.textOpacity = 0.6
 
-		wRangeValue.setPadding(5,5,0,5)
+		chargingSymbol = this.getChargerConnectedIcon();
+
+		let carControlIconBolt = stack.addImage(chargingSymbol);
+		carControlIconBolt.imageSize = scaleImage(chargingSymbol.size,12);
+		carControlIconBolt.tintColor = new Color(colors.text.primary);
+		carControlIconBolt.imageOpacity = 0.8;
+		
+		let carChargeCompleteTime = stack.addText(" "+Math.floor(car_data.time_to_charge)+":"+minutes);
+		carChargeCompleteTime.textColor = new Color(colors.text.primary);
+		carChargeCompleteTime.font = Font.systemFont(12);
+		carChargeCompleteTime.textOpacity = 0.6;
+
+		stack.setPadding(5,5,0,5);
 			
-	} else if (items.fast_charger_type != "<invalid>"){
+	} else if (car_data.charger_attached){
 		// car is connected to charger, but not charging
 		if (show_battery_percentage || show_range){
-			let carChargingSpacer2 = wRangeValue.addSpacer(null)
+			let carChargingSpacer2 = stack.addSpacer(null);
 		}
-		chargingSymbol = SFSymbol.named("bolt.circle.fill")
-		let carControlIconBolt = wRangeValue.addImage(chargingSymbol.image)
-		carControlIconBolt.imageSize = scaleImage(chargingSymbol.image.size,12)
-		carControlIconBolt.tintColor = textColor
-		carControlIconBolt.imageOpacity = 0.4		
+		chargingSymbol = this.getChargerConnectedIcon();
+		let carControlIconBolt = stack.addImage(chargingSymbol);
+		carControlIconBolt.imageSize = scaleImage(chargingSymbol.size,12);
+		carControlIconBolt.tintColor = new Color(colors.text.disabled);
+		carControlIconBolt.imageOpacity = 0.6;
 	}
-
-
-
-// show the battery bar
-
-	let batteryBarImg = wBattery.addImage(batteryBarData)
-	batteryBarImg.imageSize = new Size(130,20)
-	batteryBarImg.centerAlignImage()
-
-
-  
-  return w
+		
 }
- 
- 
+
+{ // helper functions to draw things for range info
+
+	theme.getChargerConnectedIcon = function(){
+		lockSymbol = SFSymbol.named("bolt.circle.fill");
+		return lockSymbol.image;
+	}
+}
+
+theme.drawBatteryBar = function(widget,car_data,colors){
+	let stack = widget.addStack();
+	stack.size = new Size(widgetSize.width,widgetSize.height*0.20);
+	stack.topAlignContent();
+	stack.setPadding(3,0,0,0);
+	
+	let batteryBarImg = stack.addImage(battery_bar.draw(car_data,colors));
+	//batteryBarImg.imageSize = new Size(130,20)
+	batteryBarImg.centerAlignImage()
+	
+		
+}
+
+
+var battery_bar = { // battery bar draw functions
+	batteryPath:new Path(),
+	batteryPathInset:new Path(),
+	width:widgetSize.width-6,
+	height:18,
+	init:function(){
+		this.batteryPath.addRoundedRect(new Rect(1,1,this.width,this.height),7,7);
+		this.batteryPathInset.addRoundedRect(new Rect(2,2,this.width-2,this.height-2),7,7);
+	},
+	draw:function(car_data,colors){
+		let myDrawContext = new DrawContext();
+		myDrawContext.opaque = false;
+		myDrawContext.size = new Size(this.width+2,this.height+2);
+		
+		// draw the background
+		myDrawContext.addPath(this.batteryPath);
+		myDrawContext.setFillColor(new Color(colors.battery.background));
+		myDrawContext.fillPath();
+		
+		// draw the max charge (as set by the user)
+		let batteryMaxCharge  = new DrawContext()  ;
+		batteryMaxCharge.opaque = false;
+		batteryMaxCharge.size = new Size(this.width*car_data.battery_limit/100,this.height)
+		if (car_data.car_state == "Charging"){
+			batteryMaxCharge.setFillColor(new Color(colors.battery.charging));
+		} else {
+			batteryMaxCharge.setFillColor(new Color(colors.battery.max_charge));
+		}
+		batteryMaxCharge.addPath(this.batteryPath);
+		batteryMaxCharge.fillPath();
+	
+		myDrawContext.drawImageAtPoint(batteryMaxCharge.getImage(),new Point(0,0));
+		
+		let usable_battery_level = Number(car_data.usable_battery_level);
+		
+		// draw the cold battery (if needed)
+		if (usable_battery_level < car_data.battery_level && car_data.battery_level > 1){
+			let unavailableCharge = new DrawContext()  ;
+			unavailableCharge.opaque = false;
+			unavailableCharge.size = new Size(this.width*car_data.battery_level/100,this.height);
+
+			unavailableCharge.setFillColor(new Color(colors.battery.cold_charge));
+			unavailableCharge.addPath(this.batteryPath);
+			unavailableCharge.fillPath();
+
+			myDrawContext.drawImageAtPoint(unavailableCharge.getImage(),new Point(0,0));
+			
+			usable_battery_level -= 1; // shave a little off so the cold battery display isn't just a sliver of blue.
+		}
+		
+		// draw the available charge
+		if (usable_battery_level>1){
+			// if there's at least some battery, build the current charge state bar
+			let availableCharge = new DrawContext()  ;
+			availableCharge.opaque = false;
+			availableCharge.size = new Size(this.width*usable_battery_level/100,this.height);
+
+			availableCharge.setFillColor(new Color(colors.battery.usable_charge));
+			availableCharge.addPath(this.batteryPath);
+			availableCharge.fillPath();
+							
+			myDrawContext.drawImageAtPoint(availableCharge.getImage(),new Point(0,0));
+		}
+
+		if (Number(car_data.battery_level)<99){
+			myDrawContext.setFillColor(new Color(colors.battery.separator));
+			myDrawContext.fillRect(new Rect(this.width*car_data.battery_level/100,1,1,this.height-1));
+			if (usable_battery_level < car_data.battery_level){
+				myDrawContext.fillRect(new Rect(this.width*usable_battery_level/100,1,1,this.height-1))
+			}
+		}
+
+
+		// add a final stroke to the whole thing
+		myDrawContext.addPath(this.batteryPath);// have to add the path again for some reason
+		myDrawContext.setStrokeColor(new Color(colors.battery.border));
+		myDrawContext.setLineWidth(1);
+		myDrawContext.strokePath();
+		
+		return myDrawContext.getImage(); // return our final image
+		
+	}
+	
+}
+battery_bar.init();
+
+
+// Add some backward compatibility to TeslaFi (if the APIurl is just a token, then assume it's a TeslaFi API key, otherwise, just use the URL
+if (!(APIurl.match(/\./g) || []).length){
+	APIurl = "https://www.teslafi.com/feed.php?token="+APIurl+"&command=lastGood&encode=1";
+}
+
+if ((APIurl.match(/teslafi/gi) || []).length){
+	car_data.source = "TeslaFi"
+}
+
+if (APIurl == null){
+
+	let widget = errorWidget("TeslaData Widget API url required")
+	Script.setWidget(widget)
+	widget.presentSmall()
+	Script.complete()
+
+} else {		
+	let response = await loadCarData(APIurl)	
+
+	if (response == "ok"){
+		let widget = createWidget(car_data)
+		Script.setWidget(widget)
+		widget.presentSmall()
+		Script.complete()
+	} else {
+		let widget = errorWidget(response)
+		Script.setWidget(widget)
+		widget.presentSmall()
+		Script.complete()
+	}
+}
+
+function createWidget(items) {
+	
+	let td_theme = FileManager.iCloud()
+	
+	// create the themes directory if needed (so the user doesn't have to do this)
+	theme_file = td_theme.joinPath(td_theme.documentsDirectory(),"tesla_themes");
+	if (!td_theme.isDirectory(theme_file)){
+		// create the directory
+		td_theme.createDirectory(theme_file);
+	}
+	
+	if (custom_theme != "" || custom_theme != null){
+		// load a custom theme
+		theme_file = td_theme.joinPath(td_theme.documentsDirectory(),"tesla_themes/"+custom_theme+".js");
+
+		if (td_theme.fileExists(theme_file)){
+			td_theme.downloadFileFromiCloud(theme_file);
+			eval(td_theme.readString(theme_file));
+		}
+	}
+	
+	let w = new ListWidget()
+	theme.init();
+	theme.draw(w,car_data,colors);
+	
+
+	
+	//logError(items);
+	
+	return w
+}
+
+
 function errorWidget(reason){
 	let w = new ListWidget()
 	w.setPadding(5,5,5,5)
@@ -568,12 +622,117 @@ function errorWidget(reason){
   return w
 }
  
-async function loadItems() {
+async function loadCarData(url) {
  
-	let url = APIurl
-	let req = new Request(url)
-	let json = await req.loadJSON()
-	return json
+	// get the data from APIurl, then build our internal car_data object
+	var req = await new Request(url);
+	var backupManager = FileManager.local();
+	var backupLocation = backupManager.joinPath(backupManager.libraryDirectory(), "tesla_data.txt")
+
+
+	if (debug_data==""){
+		try{
+			var json = await req.loadJSON();		
+			if (json.response == null){
+				var jsonExport = JSON.stringify(json);
+				backupManager.writeString(backupLocation,jsonExport);
+			}
+						
+		}catch(e){
+			// offline, grab the backup copy
+			var jsonImport = backupManager.readString(backupLocation);
+			var json = JSON.parse(jsonImport);
+		}
+	} else {
+		// TeslaFi only allows 3 API calls per minute, so during testing, we can just pull test data from iCloud
+		
+		let debugManager = FileManager.iCloud()
+		debug_file = debugManager.joinPath(debugManager.documentsDirectory(),"tesla_themes/"+debug_data+".json");
+
+		if (debugManager.fileExists(debug_file)){
+			debugManager.downloadFileFromiCloud(debug_file);
+			var json = JSON.parse(debugManager.readString(debug_file));
+		} else {
+			var json = {"response":{"result":"That debug file doesn't exist"}};
+		}
+	}
+	
+	
+	
+	//logError(json);
+	
+	//process any of the items
+
+	if (json.response == null){
+
+		// go through our data and normalize/clean up things so they're ready to be used.
+
+		// required data
+		if (json.usable_battery_level != null){car_data.usable_battery_level = json.usable_battery_level;}
+		if (json.charge_limit_soc  != null){car_data.battery_limit = json.charge_limit_soc ;}
+		
+		//optional data
+		if (json.display_name  != null){car_data.car_name = json.display_name ;}
+		if (json.battery_level != null){car_data.battery_level = json.battery_level;}
+		if (json.battery_range != null){car_data.battery_range = json.battery_range;}
+		if (json.est_battery_range != null){car_data.est_battery_range = json.est_battery_range;}
+		if (json.measure != null){car_data.distance_label = (json.measure == "imperial")?"mi":"km";}
+		if (json.carState  != null){car_data.car_state = json.carState ;}
+		if (json.sentry_mode != null){car_data.sentry_mode = (json.sentry_mode == 1);}
+		if (json.locked  != null){car_data.doors_locked = (json.locked == 1) ;}
+		if (json.is_climate_on  != null){car_data.climate_active = (json.is_climate_on == 1) ;}
+		if (json.temperature != null){car_data.temp_label = (json.temperature == "F")?"f":"c";}
+		if (json.inside_temp != null){car_data.inside_temp = (car_data.temp_label == "c")?json.inside_temp:json.inside_tempF;}
+		if (json.driver_temp_setting  != null){car_data.temp_setting = (car_data.temp_label == "c")?json.driver_temp_setting:json.driver_temp_settingF ;}
+		if (json.time_to_full_charge  != null){car_data.time_to_charge = json.time_to_full_charge ;}
+		if (json.fast_charger_type  != null){car_data.charger_attached = (json.fast_charger_type != "<invalid>") ;}
+
+		if (json.Date != null){
+			let lastUpdate = new Date(json.Date.replace(" ","T"))
+			let now = new Date()
+			timeDiff = Math.round((Math.abs(now - lastUpdate))/(1000 * 60))
+			if (timeDiff < 60) {
+				// been less than an hour since last update
+				car_data.last_contact = timeDiff+"m ago"
+			} else if(timeDiff < 1440){
+				car_data.last_contact = Math.floor(timeDiff/60)+"h ago"
+			} else {
+				car_data.last_contact = Math.floor(timeDiff/1440)+"d ago"
+			}
+			if (timeDiff/60 > 2){
+				car_data.data_is_stale = true; // data is more than 2 hours old.
+			}
+		}
+	
+		car_data.postLoad();
+	
+	
+		return "ok";
+	} else {
+		return json.response.result
+	}
+}
+
+
+// utility functions
+
+function scaleLines(lineArray,maxHeight,offsetX,offsetY){
+		//scale an array of lines and make it an array of scaled Points
+		let pointArray = [];
+		let scaleFactor = 0;
+		for(var i = 0;i<lineArray.length;i++){
+			if (lineArray[i][1] > scaleFactor){scaleFactor = lineArray[i][1];}
+			console.log(i+" : "+scaleFactor);
+		}
+		scaleFactor = maxHeight/scaleFactor;
+		for(var i = 0;i<lineArray.length;i++){
+			pointArray[pointArray.length] = new Point(lineArray[i][0]*scaleFactor+offsetX,lineArray[i][1]*scaleFactor+offsetY);
+		}
+		/*console.log(lineArray);
+		console.log(scaleFactor);
+		console.log(maxHeight);
+		console.log(pointArray);*/
+		return pointArray;	
 }
 
 function scaleImage(imageSize,height){
