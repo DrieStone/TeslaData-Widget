@@ -23,9 +23,10 @@ const custom_theme = "" // if you want to load a theme (some available themes ar
 
 const debug_data = ""; // this will force the widget to pull data from iCloud json files (put sample JSON in the themes directory)
 
+const debug_size = "small"; // which size should the widget try to run as when run through Scriptable. (small, medium, large)
+
 // You can embed your APIurl here, or add it as a widget parameter
 //APIurl = "YOUR_API_URL" // hardcode the API url
-
 // a little helper to try to estimate the size of the widget
 deviceScreen = Device.screenSize()
 let gutter_size = ((deviceScreen.width - 240) /5) // if we know the size of the screen, and the size of icons, we can estimate the gutter size
@@ -122,25 +123,64 @@ var car_data = {
 };
 
 var theme = {
-	size:"small",
+	small:{
+		available:true,
+		init:function(){
+		
+		},
+		draw:function(widget,car_data,colors){
+			widget.setPadding(5,5,5,5)
+			
+			widget.backgroundColor = new Color(colors.background)
+			
+			theme.drawCarStatus(widget, car_data, colors);
+			theme.drawCarName(widget, car_data, colors);
+			theme.drawStatusLights(widget, car_data, colors);
+			theme.drawRangeInfo(widget, car_data, colors);
+			theme.drawBatteryBar(widget, car_data, colors);
+
+		}
+	},
+	medium:{available:false}, // this theme doesn't support medium
+	large:{available:false}, // this theme doesn't support large
 	init:function(){
+		var widgetSize = debug_size;		
+		if (config.widgetFamily != null){
+			widgetSize = config.widgetFamily;
+		}
+		switch (widgetSize){
+			case "medium":
+				if (this.medium.available){this.medium.init();}
+				break;
+			case "large":
+				if (this.large.available){this.large.init();}
+				break;
+			case "small":
+			default:
+				if (this.small.available){this.small.init();}			
+				break;
 	
+		}
 	},
 	draw:function(widget,car_data,colors){
-		widget.setPadding(5,5,5,5)
-		
-		widget.backgroundColor = new Color(colors.background)
-		
-		//let wBody = widget.addStack()
-		//wBody.layoutVertically()
-		
-		this.drawCarStatus(widget, car_data, colors);
-		this.drawCarName(widget, car_data, colors);
-		this.drawStatusLights(widget, car_data, colors);
-		this.drawRangeInfo(widget, car_data, colors);
-		this.drawBatteryBar(widget, car_data, colors);
-
-	}	
+		var widgetSize = debug_size;		
+		if (config.widgetFamily != null){
+			widgetSize = config.widgetFamily;
+		}
+		switch (widgetSize){
+			case "medium":
+				if (this.medium.available){this.medium.draw(widget,car_data,colors);}
+				break;
+			case "large":
+				if (this.large.available){this.large.draw(widget,car_data,colors);}
+				break;
+			case "small":
+			default:
+				if (this.small.available){this.small.draw(widget,car_data,colors);}			
+				break;
+	
+		}		
+	}
 }
 
 theme.drawCarStatus = function(widget,car_data,colors){
