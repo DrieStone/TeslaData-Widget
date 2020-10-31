@@ -13,7 +13,7 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 
 ### Updates
 
-* Replace the `TeslaData Widget.js` in your iCloud/Scriptatble folder with the one here.
+* Replace the `TeslaData Widget.js` in your iCloud/Scriptable folder with the one here.
 * Wait 5-7 minutes for Scriptable to grab the new file and update the widget.
 
 ### Optional
