@@ -60,13 +60,17 @@ var colors = {
 		climate_cold:"#0000ff"
 	}
 }
-if (Device.isUsingDarkAppearance() && false){ // dark mode is not supported (you can remove "&& false" if you want to try), this is in here in the hope that Scriptable will support dark mode at some point in the future.
+
+if (Device.isUsingDarkAppearance() && false){ 
+	// Dark mode is not supported (this always returns true). 
+	// This is in here in the hope that Scriptable will support dark mode at some point in the future.
+	
 	// override colors for darkmode
 	
-	colors.background = "#000000";
+	colors.background = "#333333";
 
-	colors.text.primary = "#ffffff";
-	colors.text.disabled = "#f0f0f0";
+	colors.text.primary = "#ffffffaa";
+	colors.text.disabled = "#ffffff33";
 
 	colors.battery.background = "#cccccc22";
 	colors.battery.max_charge = "#ffffff11";
@@ -82,6 +86,8 @@ if (Device.isUsingDarkAppearance() && false){ // dark mode is not supported (you
 // set up a container for our data. 
 
 //NOTE: these values may not align with the data names from our service. Review the documention for the expected values and their names.
+
+// If you want to do additional post-processing of data from your API, you should create a theme that modifies car_data.postLoad(json).
 
 var car_data = {
 	source:"Unknown",
@@ -104,8 +110,9 @@ var car_data = {
 	temp_label:"c",
 	time_to_charge:10000,
 	charger_attached:false,
-	postLoad:function(){
+	postLoad:function(json){
 		// update data where required after load
+		// passes in the json from the API call.
 		if (this.distance_label == "km" && this.source == "TeslaFi"){
 			// convert battery_range to metric if data comes from TeslaFi
 			this.battery_range *= 1.309; 
@@ -115,6 +122,7 @@ var car_data = {
 };
 
 var theme = {
+	size:"small",
 	init:function(){
 	
 	},
@@ -542,31 +550,23 @@ if (APIurl != null && APIurl != "" && (APIurl.match(/teslafi/gi) || []).length){
 	car_data.source = "TeslaFi"
 }
 
-/*if (APIurl == null){
+	
+let response = await loadCarData(APIurl)	
 
-	let widget = errorWidget("TeslaData Widget API url required")
+if (response == "ok"){
+	let widget = createWidget(car_data,colors)
 	Script.setWidget(widget)
 	widget.presentSmall()
 	Script.complete()
+} else {
+	let widget = errorWidget(response)
+	Script.setWidget(widget)
+	widget.presentSmall()
+	Script.complete()
+}
 
 
-} else {*/		
-	let response = await loadCarData(APIurl)	
-
-	if (response == "ok"){
-		let widget = createWidget(car_data)
-		Script.setWidget(widget)
-		widget.presentSmall()
-		Script.complete()
-	} else {
-		let widget = errorWidget(response)
-		Script.setWidget(widget)
-		widget.presentSmall()
-		Script.complete()
-	}
-//}
-
-function createWidget(items) {
+function createWidget(car_data,colors) {
 	
 	let td_theme = FileManager.iCloud()
 	
@@ -591,9 +591,6 @@ function createWidget(items) {
 	theme.init();
 	theme.draw(w,car_data,colors);
 	
-
-	
-	//logError(items);
 	
 	return w
 }
@@ -712,8 +709,7 @@ async function loadCarData(url) {
 			}
 		}
 	
-		car_data.postLoad();
-	
+		car_data.postLoad(json);
 	
 		return "ok";
 	} else {
@@ -736,10 +732,6 @@ function scaleLines(lineArray,maxHeight,offsetX,offsetY){
 		for(var i = 0;i<lineArray.length;i++){
 			pointArray[pointArray.length] = new Point(lineArray[i][0]*scaleFactor+offsetX,lineArray[i][1]*scaleFactor+offsetY);
 		}
-		/*console.log(lineArray);
-		console.log(scaleFactor);
-		console.log(maxHeight);
-		console.log(pointArray);*/
 		return pointArray;	
 }
 
