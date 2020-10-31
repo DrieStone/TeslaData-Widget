@@ -6,7 +6,7 @@ In general, you should use themes for any customization you want to do to the di
 
 The easiest way to theme the widget is to modify the colors. This can be done by overriding the colors used in the theme file:
 
-   background:"#ddbbbb";
+     background:"#ddbbbb";
    
 Colors should be hex colors, RRGGBBAA (red, green, blue, alpha) or RRGGBB (red, green, blue). RGB (red, green, blue) is valid, but there's a bug in Scriptable where green and blue are swapped. It's recommended not to use this format.
 
