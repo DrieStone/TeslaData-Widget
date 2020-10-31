@@ -27,7 +27,11 @@ The postLoad function can be overwritten so you can consume additional data from
 
 ## Theme
 
-The theme object is called to draw the data to the widget. You can override the theme.draw function to completely change the way that the widget is drawn, however if you want to use the existing theme, but change certain parts, the existing theme is split into 5 boxes that are stacked vertically: Car Status, Car Name, Status Lights, Range Info, and Battery Bar. You can override any of these functions to provide your own style.
+The theme object is called to draw the data to the widget. Themes are broken down into small, medium, and large (so you can write a theme that supports all three sizes). A theme.[size].available variable is set to let the system know if the theme is available in that size.
+
+You can override the theme's draw function to completely change the way that the widget is drawn. This should be done by replacing the theme.small.draw function.
+
+However, if you want to use the existing theme, but change certain parts, the existing theme is split into 5 boxes that are stacked vertically: Car Status, Car Name, Status Lights, Range Info, and Battery Bar. You can override any of these functions to provide your own style.
 
 For instance, if you wanted to change the way that the car's name is displayed, you can override the drawCarName function:
 
