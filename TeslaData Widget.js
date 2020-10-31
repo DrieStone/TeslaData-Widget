@@ -27,11 +27,9 @@ const debug_size = "small"; // which size should the widget try to run as when r
 
 // You can embed your APIurl here, or add it as a widget parameter
 //APIurl = "YOUR_API_URL" // hardcode the API url
-// a little helper to try to estimate the size of the widget
-deviceScreen = Device.screenSize()
-let gutter_size = ((deviceScreen.width - 240) /5) // if we know the size of the screen, and the size of icons, we can estimate the gutter size
-let widgetSize = new Size(gutter_size + 110, gutter_size + 110) // small widget size
 
+// a little helper to try to estimate the size of the widget
+var widgetSize = computeWidgetSize();
 
 // set up all the colors we want to use
 var colors = {
@@ -144,11 +142,11 @@ var theme = {
 	medium:{available:false}, // this theme doesn't support medium
 	large:{available:false}, // this theme doesn't support large
 	init:function(){
-		var widgetSize = debug_size;		
+		var widgetSizing = debug_size;		
 		if (config.widgetFamily != null){
-			widgetSize = config.widgetFamily;
+			widgetSizing = config.widgetFamily;
 		}
-		switch (widgetSize){
+		switch (widgetSizing){
 			case "medium":
 				if (this.medium.available){this.medium.init();}
 				break;
@@ -163,20 +161,23 @@ var theme = {
 		}
 	},
 	draw:function(widget,car_data,colors){
-		var widgetSize = debug_size;		
+		var widgetSizing = debug_size;		
 		if (config.widgetFamily != null){
-			widgetSize = config.widgetFamily;
+			widgetSizing = config.widgetFamily;
 		}
-		switch (widgetSize){
+		switch (widgetSizing){
 			case "medium":
 				if (this.medium.available){this.medium.draw(widget,car_data,colors);}
+					else {drawErrorWidget(widget,'Theme not available at this size');}
 				break;
 			case "large":
 				if (this.large.available){this.large.draw(widget,car_data,colors);}
+					else {drawErrorWidget(widget,'Theme not available at this size');}
 				break;
 			case "small":
 			default:
-				if (this.small.available){this.small.draw(widget,car_data,colors);}			
+				if (this.small.available){this.small.draw(widget,car_data,colors);}	
+					else {drawErrorWidget(widget,'Theme not available at this size');}				
 				break;
 	
 		}		
@@ -594,15 +595,30 @@ if (APIurl != null && APIurl != "" && (APIurl.match(/teslafi/gi) || []).length){
 let response = await loadCarData(APIurl)	
 
 if (response == "ok"){
-	let widget = createWidget(car_data,colors)
-	Script.setWidget(widget)
-	widget.presentSmall()
-	Script.complete()
+	let widget = createWidget(car_data,colors);
+	Script.setWidget(widget);
+	presentWidget(widget);
+	Script.complete();
 } else {
-	let widget = errorWidget(response)
-	Script.setWidget(widget)
-	widget.presentSmall()
-	Script.complete()
+	let widget = errorWidget(response);
+	Script.setWidget(widget);
+	presentWidget(widget);
+	Script.complete();
+}
+
+function presentWidget(widget){
+	switch (debug_size){
+		case "medium":
+			widget.presentMedium();
+			break;
+		case "large":
+			widget.presentLarge();
+			break;
+		case "small":
+		default:
+			widget.presentSmall();		
+			break;
+	}	
 }
 
 
@@ -638,6 +654,13 @@ function createWidget(car_data,colors) {
 
 function errorWidget(reason){
 	let w = new ListWidget()
+	
+	drawErrorWidget(w,reason);
+
+  return w
+}
+ 
+ function drawErrorWidget(w,reason){
 	w.setPadding(5,5,5,5)
 	let myGradient = new LinearGradient()
 
@@ -655,9 +678,8 @@ function errorWidget(reason){
 	let reasonText = w.addText(reason)
 	reasonText.textColor = Color.white()
 	reasonText.minimumScaleFactor = 0.5
-
-  return w
-}
+ 
+ }
  
 async function loadCarData(url) {
  
@@ -779,6 +801,28 @@ function scaleImage(imageSize,height){
 	scale = height/imageSize.height
 	return new Size(scale*imageSize.width,height)
 }
+
+function computeWidgetSize(){
+	deviceScreen = Device.screenSize()
+	let gutter_size = ((deviceScreen.width - 240) /5) // if we know the size of the screen, and the size of icons, we can estimate the gutter size
+	var widgetSize = new Size(gutter_size + 110, gutter_size + 110) // small widget size
+
+	var widgetSizing = debug_size;		
+	if (config.widgetFamily != null){
+		widgetSizing = config.widgetFamily;
+	}
+	switch (widgetSizing){
+		case "medium":
+			widgetSize = new Size(gutter_size*3 + 220, gutter_size + 110) // medium widget size
+			break;
+		case "large":
+			widgetSize = new Size(gutter_size*3 + 220, gutter_size*3 + 220) // large widget size
+			break;	
+	}
+
+	return widgetSize
+}
+
 
 function getSampleData(){
 	return {
