@@ -4,15 +4,20 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 <img src="documentation/screen_001.png" width="400" /> &nbsp; <img src="documentation/screen_002.png" width="400" />
 
 ## Usage
-### General
+### New Install
 
-* Download Scriptable to your iOS device
-* Download the `TeslaData Widget.js` file to your iCloud/Scriptable folder (or create a new widget in the scriptable app)
-* Create a small scriptable widget
-* Under widget options, select "TeslaData Widget" and enter the API url into the widget parameters
+* Get Scriptable in the Apple App Store.
+* Download the `TeslaData Widget.js` file to your iCloud/Scriptable folder (or create a new widget in the scriptable app).
+* Create a small scriptable widget.
+* Under widget options, select "TeslaData Widget" and enter the API url into the widget parameters.
+
+### Updates
+
+* Replace the `TeslaData Widget.js` in your iCloud/Scriptatble folder with the one here.
+* Wait 5-7 minutes for Scriptable to grab the new file and update the widget.
 
 ### Optional
-* Download the tesla_themes directory to your iCloud/Scriptable folder
+* Download the tesla_themes directory to your iCloud/Scriptable folder.
 * Edit the widget variable "custom_theme" to include the name of the theme you want to load (e.g. custom_theme = "3d" will load the 3d.js theme from the themes directory).
 
 ### TeslaFi API
