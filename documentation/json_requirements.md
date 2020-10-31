@@ -1,12 +1,15 @@
 # Overview of the fields in that are consumed by the widget.
 
 ## Required
+* usable_battery_level : the actual usable amount (0-100), this is used when the battery is cold
+* charge_limit_soc : the charge limit you have configured for the car (0-100)
 
+Although, it's a good idea to include all of the following fields, the widget will still render what it can when you include any of the following fields.
+
+## Optional
 * response : should be null unless there is an error
 * Date : the last contact with the vehicle (This can be almost any date format, but should include date and time, TelsaFi uses UTC style YYYY-MM-DD HH:MM:SS)
 * battery_level : the current battery value (0-100)
-* usable_battery_level : the actual usable amount (0-100), this is used when the battery is cold
-* charge_limit_soc : the charge limit you have configured for the car (0-100)
 * carState : the current state of the car (Sleeping, Charging, Driving, Idle)
 * sentry_mode : is sentry mode on (0 or 1)
 * display_name : the name of the car (as defined by the user)
