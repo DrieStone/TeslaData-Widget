@@ -96,6 +96,7 @@ Starting with v1.5 TeslaData will optionally pull JSON files from iCloud for tes
    - Many fields are no longer required (but still preferred)
    - Added code to store a copy of the last data, so the widget doesn't error when the device doesn't have network
    - Added support for themes (and moved 3d bars into a theme)
+   - Added support for external configuration file
 - v1.0 
    - Use apiurl parameter instead apikey (now supports any JSON source)
    - Renamed to TeslaData widget.
