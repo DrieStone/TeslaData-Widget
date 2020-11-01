@@ -9,7 +9,7 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 * Get Scriptable in the Apple App Store.
 * Download the `TeslaData Widget.js` file to your iCloud/Scriptable folder (or create a new widget in the scriptable app).
 * Create a small scriptable widget.
-* Under widget options, select "TeslaData Widget" and enter the API url into the widget parameters.
+* Under widget options, select "TeslaData Widget" and enter the API url into the widget parameters -OR- Add/modify an parameters.js file in the tesla_data folder to include a hard coded URL.
 
 ### Updates
 
