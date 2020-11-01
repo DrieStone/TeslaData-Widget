@@ -13,23 +13,23 @@
 // This is better than other methods because TeslaFi tries to encourage your car to sleep to reduce phantom battery drain. Using this script will not directly connect to the car to respect the sleep status.
 // Notice that there is ~5 minute lag for data. The data may be stale because TeslaFi won't wake the car to get data. I've added a display so you can see how old the data is. The should (normally) be minutes except when the car is sleeping.
 
-let APIurl = args.widgetParameter
+let APIurl = args.widgetParameter;
 
-const show_battery_percentage = true // show the battery percentage above the battery bar
-const show_range = true // show the estimated range above the battery bar
-const show_range_est = true // show range estimated instead of the car's range estimate
-const show_data_age = false // show how stale the data is
-const custom_theme = "" // if you want to load a theme (some available themes are "3d")
+/* Although you can change these options here, it's recommended that you make changes in the parameters.js file instead. */
+{
+	var show_battery_percentage = true; // show the battery percentage above the battery bar
+	var show_range = true; // show the estimated range above the battery bar
+	var show_range_est = true; // show range estimated instead of the car's range estimate
+	var show_data_age = false; // show how stale the data is
+	var custom_theme = ""; // if you want to load a theme (some available themes are "3d")
 
-const debug_data = ""; // this will force the widget to pull data from iCloud json files (put sample JSON in the themes directory)
+	var debug_data = ""; // this will force the widget to pull data from iCloud json files (put sample JSON in the themes directory)
 
-const debug_size = "small"; // which size should the widget try to run as when run through Scriptable. (small, medium, large)
+	var debug_size = "small"; // which size should the widget try to run as when run through Scriptable. (small, medium, large)
 
-// You can embed your APIurl here, or add it as a widget parameter
-//APIurl = "YOUR_API_URL" // hardcode the API url
-
-// a little helper to try to estimate the size of the widget
-var widgetSize = computeWidgetSize();
+	// You can embed your APIurl here, or add it as a widget parameter
+	//APIurl = "YOUR_API_URL" // hardcode the API url
+}
 
 // set up all the colors we want to use
 var colors = {
@@ -119,6 +119,18 @@ var car_data = {
 		}	
 	}
 };
+
+// load parameters from a file on iCloud
+let additional_manager = FileManager.iCloud()		
+api_file = additional_manager.joinPath(additional_manager.documentsDirectory(),"tesla_data/parameters.js");
+
+if (additional_manager.fileExists(api_file)){
+	additional_manager.downloadFileFromiCloud(api_file);
+	eval(additional_manager.readString(api_file));
+}
+
+// a little helper to try to estimate the size of the widget in pixels
+var widgetSize = computeWidgetSize();
 
 var theme = {
 	small:{
@@ -582,6 +594,8 @@ var battery_bar = { // battery bar draw functions
 battery_bar.init();
 
 
+
+
 // Add some backward compatibility to TeslaFi (if the APIurl is just a token, then assume it's a TeslaFi API key, otherwise, just use the URL
 if (APIurl != null && APIurl != "" && !(APIurl.match(/\./g) || []).length){
 	APIurl = "https://www.teslafi.com/feed.php?token="+APIurl+"&command=lastGood&encode=1";
@@ -591,6 +605,9 @@ if (APIurl != null && APIurl != "" && (APIurl.match(/teslafi/gi) || []).length){
 	car_data.source = "TeslaFi"
 }
 
+
+
+// Start processing our code (load the car data, then render)
 	
 let response = await loadCarData(APIurl)	
 
@@ -627,7 +644,7 @@ function createWidget(car_data,colors) {
 	let td_theme = FileManager.iCloud()
 	
 	// create the themes directory if needed (so the user doesn't have to do this)
-	theme_file = td_theme.joinPath(td_theme.documentsDirectory(),"tesla_themes");
+	theme_file = td_theme.joinPath(td_theme.documentsDirectory(),"tesla_data");
 	if (!td_theme.isDirectory(theme_file)){
 		// create the directory
 		td_theme.createDirectory(theme_file);
@@ -635,7 +652,7 @@ function createWidget(car_data,colors) {
 	
 	if (custom_theme != "" || custom_theme != null){
 		// load a custom theme
-		theme_file = td_theme.joinPath(td_theme.documentsDirectory(),"tesla_themes/"+custom_theme+".js");
+		theme_file = td_theme.joinPath(td_theme.documentsDirectory(),"tesla_data/"+custom_theme+".js");
 
 		if (td_theme.fileExists(theme_file)){
 			td_theme.downloadFileFromiCloud(theme_file);
@@ -708,7 +725,7 @@ async function loadCarData(url) {
 			// TeslaFi only allows 3 API calls per minute, so during testing, we can just pull test data from iCloud
 			
 			let debugManager = FileManager.iCloud()
-			debug_file = debugManager.joinPath(debugManager.documentsDirectory(),"tesla_themes/"+debug_data+".json");
+			debug_file = debugManager.joinPath(debugManager.documentsDirectory(),"tesla_data/"+debug_data+".json");
 
 			if (debugManager.fileExists(debug_file)){
 				debugManager.downloadFileFromiCloud(debug_file);
