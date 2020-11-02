@@ -17,7 +17,7 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 * Wait 5-7 minutes for Scriptable to grab the new file and update the widget.
 
 ### Optional
-* Download the tesla_themes directory to your iCloud/Scriptable folder.
+* Download the tesla_data directory to your iCloud/Scriptable folder.
 * Edit the widget variable "custom_theme" to include the name of the theme you want to load (e.g. custom_theme = "3d" will load the 3d.js theme from the themes directory).
 
 ### TeslaFi API
