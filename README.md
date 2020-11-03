@@ -1,7 +1,7 @@
 # TeslaData Widget
 A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tronity to display a widget on your iPhone. 
 
-<img src="documentation/screen_001.png" width="400" /> &nbsp; <img src="documentation/screen_001_med.png" width="400" />
+<img src="documentation/screen_001.png" width="400" /> &nbsp; <img src="documentation/screen_003.png" width="400" /> &nbsp; <img src="documentation/screen_001_med.png" width="400" />
 
 ## Usage
 ### Install with Scriptdude
