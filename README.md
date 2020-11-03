@@ -13,16 +13,21 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 * Get Scriptable in the Apple App Store.
 * Download the `TeslaData Widget.js` file to your iCloud/Scriptable folder (or create a new widget in the scriptable app).
 * Create a small scriptable widget.
-* Under widget options, select "TeslaData Widget" and enter the API url into the widget parameters -OR- Add/modify an parameters.js file in the tesla_data folder to include a hard coded URL.
+* Link your API do one of the following
+    * Under widget options, select "TeslaData Widget" and enter the API url into the widget parameters.
+    * If you're using TeslaFi, you can just enter the API Key in the widget paramters.
+    * For advanced users (or if you want to extend the fucntionality of TeslaData), you should create a parameters.js file in iCloud (see Optional below).
 
 ### Manual Update
 
 * Replace the `TeslaData Widget.js` in your iCloud/Scriptable folder with the one here.
 * Wait 5-7 minutes for Scriptable to grab the new file and update the widget.
 
-### Optional
+### Optional/Advanced
 * Download/create the tesla_data directory to your iCloud/Scriptable folder.
-* Edit the widget variable "custom_theme" to include the name of the theme you want to load (e.g. custom_theme = "3d" will load the 3d.js theme from the themes directory).
+* Create a paramters.js file (or copy the one from here), and add your API url to the file.
+* Get a [map API key from MapQuest](https://developer.mapquest.com/) and add it to your paramters.js file.
+* Install any themes into the tesla_data folder, and modify the parameters.js file to include the theme you'd like to apply (e.g. custom_theme = "3d" will load the 3d.js theme from the themes directory).
 
 ### TeslaFi API
 You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://teslafi.com/api.php).
