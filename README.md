@@ -95,6 +95,12 @@ Starting with v1.5 TeslaData will optionally pull JSON files from iCloud for tes
 
 ## Changelog
 
+- v1.6
+   - Added Longitude/Latitude to data set
+   - Updated theming to support async processing (so themes can pull data from external URLs)
+   - Updated default theme to support medium
+   - Added themeDebugArea as a place for theme development (bottom of the code)
+   - Added map theme (medum size only).
 - v1.5 
    - Complete rewrite of the code for cleanliness.
    - Many fields are no longer required (but still preferred)
