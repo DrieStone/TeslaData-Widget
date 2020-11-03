@@ -56,15 +56,15 @@ If you use other tools like [TeslaLogger](https://github.com/bassmaster187/Tesla
 
 API url (eg.): https://MY_USER:MY_PASS@MY_URL.com/api.json
 
+## Map
+
+At medium sizes, the widget will show a map with the location of the car, but only if your API includes long/lat and you have a key from MapQuest. Visit https://developer.mapquest.com/ to create an account and get an API. Then, add the API key in your parameters.js file.
+
 ## Configuration
 
 There are a few options if you want to turn on/off battery percentage and estimated range (and if you'd like to use the car's range, or the TeslaFi estimate). These options are the constants at the top of the file (set the variables as true/false)
 
-There's also an option for a 3D styled battery bar.
-
 Note, due to the lag with TeslaFi pulling data from your car, and the lag of iOS pulling the data, the resulting display could be ~5 minutes stale (and the data could be hours or even a day old because TeslaFi lets the car sleep, so its not sending data)
-
-Also note that this really only works as a small widget size, and only tested on an iPhone X (it may work fine for other phones, but not sure about iPad)
 
 ## Features
 
@@ -76,6 +76,7 @@ This should support:
 * sentry mode on
 * sleeping, idle, driving indicator
 * time since the data was retreived from the car (respects TeslaFi sleep)
+* map location of the car's current position
 
 ## Themes
 
@@ -104,7 +105,7 @@ Starting with v1.5 TeslaData will optionally pull JSON files from iCloud for tes
    - Updated theming to support async processing (so themes can pull data from external URLs)
    - Updated default theme to support medium
    - Added themeDebugArea as a place for theme development (bottom of the code)
-   - Added map theme (medum size only).
+   - Added map to medium sized widget if the data supports it
 - v1.5 
    - Complete rewrite of the code for cleanliness.
    - Many fields are no longer required (but still preferred)
