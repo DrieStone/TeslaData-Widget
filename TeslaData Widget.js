@@ -109,6 +109,8 @@ var car_data = {
 	temp_label:"c",
 	time_to_charge:10000,
 	charger_attached:false,
+	longitude:-1,
+	latitude:-1,
 	postLoad:function(json){
 		// update data where required after load
 		// passes in the json from the API call.
@@ -138,21 +140,21 @@ var theme = {
 		init:function(){
 		
 		},
-		draw:function(widget,car_data,colors){
+		draw:async function(widget,car_data,colors){
 			widget.setPadding(5,5,5,5)
 			
 			widget.backgroundColor = new Color(colors.background)
 			
-			theme.drawCarStatus(widget, car_data, colors);
-			theme.drawCarName(widget, car_data, colors);
-			theme.drawStatusLights(widget, car_data, colors);
-			theme.drawRangeInfo(widget, car_data, colors);
-			theme.drawBatteryBar(widget, car_data, colors);
+			theme.drawCarStatus(widget, car_data, colors,widgetSize);
+			theme.drawCarName(widget, car_data, colors,widgetSize);
+			theme.drawStatusLights(widget, car_data, colors,widgetSize);
+			theme.drawRangeInfo(widget, car_data, colors,widgetSize);
+			theme.drawBatteryBar(widget, car_data, colors,widgetSize);
 
 		}
 	},
-	medium:{available:false}, // this theme doesn't support medium
-	large:{available:false}, // this theme doesn't support large
+	medium:{available:false,init:function(){},draw:function(){}}, // this theme doesn't support medium
+	large:{available:false,init:function(){},draw:function(){}}, // this theme doesn't support large
 	init:function(){
 		var widgetSizing = debug_size;		
 		if (config.widgetFamily != null){
@@ -172,31 +174,34 @@ var theme = {
 	
 		}
 	},
-	draw:function(widget,car_data,colors){
+	draw:async function(widget,car_data,colors){
 		var widgetSizing = debug_size;		
 		if (config.widgetFamily != null){
 			widgetSizing = config.widgetFamily;
 		}
 		switch (widgetSizing){
 			case "medium":
-				if (this.medium.available){this.medium.draw(widget,car_data,colors);}
+				if (this.medium.available){await this.medium.draw(widget,car_data,colors);}
 					else {drawErrorWidget(widget,'Theme not available at this size');}
 				break;
 			case "large":
-				if (this.large.available){this.large.draw(widget,car_data,colors);}
+				if (this.large.available){await this.large.draw(widget,car_data,colors);}
 					else {drawErrorWidget(widget,'Theme not available at this size');}
 				break;
 			case "small":
 			default:
-				if (this.small.available){this.small.draw(widget,car_data,colors);}	
+				if (this.small.available){await this.small.draw(widget,car_data,colors);}	
 					else {drawErrorWidget(widget,'Theme not available at this size');}				
 				break;
 	
 		}		
 	}
 }
+theme.medium.available = true;
+theme.medium.init = theme.small.init;
+theme.medium.draw = theme.small.draw;
 
-theme.drawCarStatus = function(widget,car_data,colors){
+theme.drawCarStatus = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
 	stack.size = new Size(widgetSize.width,widgetSize.height*0.20);
 	stack.topAlignContent();
@@ -319,7 +324,7 @@ theme.drawCarStatus = function(widget,car_data,colors){
 	}
 }
 
-theme.drawCarName = function(widget,car_data,colors){
+theme.drawCarName = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
 	stack.size = new Size(widgetSize.width,widgetSize.height*0.25);
 	stack.centerAlignContent();
@@ -332,7 +337,7 @@ theme.drawCarName = function(widget,car_data,colors){
 	carName.minimumScaleFactor = 0.5
 }
 
-theme.drawStatusLights = function(widget,car_data,colors){
+theme.drawStatusLights = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
 	stack.size = new Size(widgetSize.width,widgetSize.height*0.20);
 	stack.setPadding(3,10,3,10);
@@ -403,7 +408,7 @@ theme.drawStatusLights = function(widget,car_data,colors){
 
 }
 
-theme.drawRangeInfo = function(widget,car_data,colors){
+theme.drawRangeInfo = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
 	stack.size = new Size(widgetSize.width,widgetSize.height*0.15);
 	stack.centerAlignContent();
@@ -493,13 +498,13 @@ theme.drawRangeInfo = function(widget,car_data,colors){
 	}
 }
 
-theme.drawBatteryBar = function(widget,car_data,colors){
+theme.drawBatteryBar = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
 	stack.size = new Size(widgetSize.width,widgetSize.height*0.20);
 	stack.topAlignContent();
 	stack.setPadding(3,0,0,0);
 	
-	let batteryBarImg = stack.addImage(battery_bar.draw(car_data,colors));
+	let batteryBarImg = stack.addImage(battery_bar.draw(car_data,colors,widgetSize));
 	//batteryBarImg.imageSize = new Size(130,20)
 	batteryBarImg.centerAlignImage()
 	
@@ -513,10 +518,12 @@ var battery_bar = { // battery bar draw functions
 	width:widgetSize.width-6,
 	height:18,
 	init:function(){
+	},
+	draw:function(car_data,colors,widgetSize){
+		this.width = widgetSize.width-6;
 		this.batteryPath.addRoundedRect(new Rect(1,1,this.width,this.height),7,7);
 		this.batteryPathInset.addRoundedRect(new Rect(2,2,this.width-2,this.height-2),7,7);
-	},
-	draw:function(car_data,colors){
+
 		let myDrawContext = new DrawContext();
 		myDrawContext.opaque = false;
 		myDrawContext.size = new Size(this.width+2,this.height+2);
@@ -612,7 +619,7 @@ if (APIurl != null && APIurl != "" && (APIurl.match(/teslafi/gi) || []).length){
 let response = await loadCarData(APIurl)	
 
 if (response == "ok"){
-	let widget = createWidget(car_data,colors);
+	let widget = await createWidget(car_data,colors);
 	Script.setWidget(widget);
 	presentWidget(widget);
 	Script.complete();
@@ -638,8 +645,8 @@ function presentWidget(widget){
 	}	
 }
 
-
-function createWidget(car_data,colors) {
+async function createWidget(car_data,colors) {
+	themeDebugArea();
 	
 	let td_theme = FileManager.iCloud()
 	
@@ -662,12 +669,11 @@ function createWidget(car_data,colors) {
 	
 	let w = new ListWidget()
 	theme.init();
-	theme.draw(w,car_data,colors);
+	await theme.draw(w,car_data,colors);
 	
 	
 	return w
 }
-
 
 function errorWidget(reason){
 	let w = new ListWidget()
@@ -729,7 +735,7 @@ async function loadCarData(url) {
 
 			if (debugManager.fileExists(debug_file)){
 				debugManager.downloadFileFromiCloud(debug_file);
-				var json = JSON.parse(debugManager.readString(debug_file));
+				var json = await JSON.parse(debugManager.readString(debug_file));
 			} else {
 				var json = {"response":{"result":"That debug file doesn't exist"}};
 			}
@@ -739,7 +745,7 @@ async function loadCarData(url) {
 		var now = new Date();
 		now.setTime(now.getTime() + 60000*5);
 		json.Date = now.toISOString();
-		console.log(json);
+		//console.log(json);
 	}
 	
 	
@@ -770,6 +776,9 @@ async function loadCarData(url) {
 		if (json.driver_temp_setting  != null){car_data.temp_setting = (car_data.temp_label == "c")?json.driver_temp_setting:json.driver_temp_settingF ;}
 		if (json.time_to_full_charge  != null){car_data.time_to_charge = json.time_to_full_charge ;}
 		if (json.fast_charger_type  != null){car_data.charger_attached = (json.fast_charger_type != "<invalid>") ;}
+
+		if (json.longitude != null){car_data.longitude = json.longitude;}
+		if (json.latitude != null){car_data.latitude = json.latitude;}
 
 		if (json.Date != null){
 			let lastUpdate = new Date(json.Date.replace(" ","T"))
@@ -805,7 +814,7 @@ function scaleLines(lineArray,maxHeight,offsetX,offsetY){
 		let scaleFactor = 0;
 		for(var i = 0;i<lineArray.length;i++){
 			if (lineArray[i][1] > scaleFactor){scaleFactor = lineArray[i][1];}
-			console.log(i+" : "+scaleFactor);
+			//console.log(i+" : "+scaleFactor);
 		}
 		scaleFactor = maxHeight/scaleFactor;
 		for(var i = 0;i<lineArray.length;i++){
@@ -823,6 +832,7 @@ function computeWidgetSize(){
 	deviceScreen = Device.screenSize()
 	let gutter_size = ((deviceScreen.width - 240) /5) // if we know the size of the screen, and the size of icons, we can estimate the gutter size
 	var widgetSize = new Size(gutter_size + 110, gutter_size + 110) // small widget size
+	widgetSize.gutter_size = gutter_size;
 
 	var widgetSizing = debug_size;		
 	if (config.widgetFamily != null){
@@ -861,4 +871,10 @@ function getSampleData(){
 	   "time_to_full_charge":0.0,
 	   "fast_charger_type":"<invalid>"
 	}
+}
+
+function themeDebugArea(){
+	// This is a working area for theme development (so errors will give you correct line numbers
+	// Once you've finished, move your code to a JS file in the tesla_data folder
+	
 }
