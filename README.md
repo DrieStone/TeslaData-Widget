@@ -77,6 +77,10 @@ This should support:
 * sleeping, idle, driving indicator
 * time since the data was retreived from the car (respects TeslaFi sleep)
 
+## Themes
+
+To add themes to TeslaData you need to add theme files to the tesla_data file, and modify the custom_theme variable at the top of the widget code. To get an overview of themes, you can look at the [Theme Listing](documentation/theme_listing.md) page.
+
 ## Outstanding Bugs
 
 - There appears to be an issue with SF graphics in Scriptable where the images are stretched.
