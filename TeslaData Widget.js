@@ -21,11 +21,11 @@ let APIurl = args.widgetParameter;
 	var show_range = true; // show the estimated range above the battery bar
 	var show_range_est = true; // show range estimated instead of the car's range estimate
 	var show_data_age = false; // show how stale the data is
-	var custom_theme = ""; // if you want to load a theme (some available themes are "3d")
+	var custom_theme = ""; //"mpa"; // if you want to load a theme (some available themes are "3d")
 
 	var debug_data = ""; // this will force the widget to pull data from iCloud json files (put sample JSON in the themes directory)
 
-	var debug_size = "small"; // which size should the widget try to run as when run through Scriptable. (small, medium, large)
+	var debug_size = "medium"; // which size should the widget try to run as when run through Scriptable. (small, medium, large)
 
 	// You can embed your APIurl here, or add it as a widget parameter
 	//APIurl = "YOUR_API_URL" // hardcode the API url
@@ -200,6 +200,53 @@ var theme = {
 theme.medium.available = true;
 theme.medium.init = theme.small.init;
 theme.medium.draw = theme.small.draw;
+
+function addMapArea(){ // add the map area for medium size.
+	if (mapKey != null && mapKey != "" && car_data.longitude != -1 && car_data.latitude != -1){
+		// only if we have everything we need, otherwise leave the medium size as is.
+
+		const mapZoomLevel = 17;
+		var mapSizeQuery = '200,200@2x';
+		var mapType = 'light' ;
+		var mapIconColorPosition = '222222'
+
+		theme.medium.draw = async function(widget,car_data,colors){
+			widget.setPadding(5,5,5,5);
+			widget.backgroundColor = new Color(colors.background);
+			let body = widget.addStack();
+			
+			body.layoutHorizontally();
+			
+			let column_left = body.addStack();
+			column_left.size = new Size(widgetSize.width/2,widgetSize.height);
+			column_left.layoutVertically();
+
+
+			theme.drawCarStatus(column_left, car_data, colors,new Size(widgetSize.width/2,widgetSize.height));
+			theme.drawCarName(column_left, car_data, colors,new Size(widgetSize.width/2,widgetSize.height));
+			theme.drawStatusLights(column_left, car_data, colors,new Size(widgetSize.width/2,widgetSize.height));
+			theme.drawRangeInfo(column_left, car_data, colors,new Size(widgetSize.width/2,widgetSize.height));
+			theme.drawBatteryBar(column_left, car_data, colors,new Size(widgetSize.width/2,widgetSize.height));
+
+
+			let center_padding = body.addSpacer(10);
+			let column_right = body.addStack();
+
+			let mapUrl = `https://www.mapquestapi.com/staticmap/v5/map?key=${mapKey}&locations=${car_data.latitude},${car_data.longitude}&zoom=${mapZoomLevel}&format=png&size=${mapSizeQuery}&type=${mapType}&defaultMarker=marker-${mapIconColorPosition}`;
+			
+			var req = new Request(mapUrl);
+			
+			let mapImage = await req.loadImage();
+			
+			column_right.topAlignContent();
+			
+			let mapImageObj = column_right.addImage(mapImage);
+			mapImageObj.cornerRadius= 22;
+			mapImageObj.rightAlignImage();
+		}
+
+	}
+}
 
 theme.drawCarStatus = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
@@ -618,6 +665,8 @@ if (APIurl != null && APIurl != "" && (APIurl.match(/teslafi/gi) || []).length){
 	
 let response = await loadCarData(APIurl)	
 
+addMapArea(); // after loading car data we can decide if we can display the map
+
 if (response == "ok"){
 	let widget = await createWidget(car_data,colors);
 	Script.setWidget(widget);
@@ -876,5 +925,6 @@ function getSampleData(){
 function themeDebugArea(){
 	// This is a working area for theme development (so errors will give you correct line numbers
 	// Once you've finished, move your code to a JS file in the tesla_data folder
-	
+
+
 }
