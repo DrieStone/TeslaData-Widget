@@ -28,6 +28,7 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 * Create a paramters.js file (or copy the one from here), and add your API url to the file.
 * Get a [map API key from MapQuest](https://developer.mapquest.com/) and add it to your paramters.js file.
 * Install any themes into the tesla_data folder, and modify the parameters.js file to include the theme you'd like to apply (e.g. custom_theme = "3d" will load the 3d.js theme from the themes directory).
+* Note: The widget paramter overrides the parameters.js. This is so you can have widgets for more than one car (or more than one data source).
 
 ### TeslaFi API
 You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://teslafi.com/api.php).
