@@ -6,7 +6,7 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 ## Usage
 ### Install with Scriptdude
 
-[<img src="https://scriptdu.de/download.svg" width="120" />](https://scriptdu.de/?name=TeslaFi&source=https://raw.githubusercontent.com/DrieStone/TeslaData-Widget/main/TeslaData%20Widget.js&docs=https://github.com/DrieStone/TeslaFi-Widget#generator)
+[<img src="https://scriptdu.de/download.svg" width="120" />](https://scriptdu.de/?name=TeslaData&source=https://raw.githubusercontent.com/DrieStone/TeslaData-Widget/main/TeslaData%20Widget.js&docs=https://github.com/DrieStone/TeslaData-Widget#generator)
 
 ### Manual Install
 
