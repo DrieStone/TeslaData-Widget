@@ -6,6 +6,8 @@
 // Version 1.5
 // Jon Sweet (jon@driestone.com)
 // Tobias Merkl (@tabsl)
+// 
+// Map Code blatenly stolen from @ThisIsBenny
 //
 // This pulls data from a given API, eg. TeslaFi, Teslalogger, Tronity to display a widget on your iPhone
 // 
@@ -26,6 +28,9 @@ let APIurl = args.widgetParameter;
 	var debug_data = ""; // this will force the widget to pull data from iCloud json files (put sample JSON in the themes directory)
 
 	var debug_size = "medium"; // which size should the widget try to run as when run through Scriptable. (small, medium, large)
+
+	var is_dark_mode_working = false; // Scriptable widgets don't currently support dark mode.
+
 
 	// You can embed your APIurl here, or add it as a widget parameter
 	//APIurl = "YOUR_API_URL" // hardcode the API url
@@ -57,10 +62,14 @@ var colors = {
 		sentry_dot:"#ff0000",
 		climate_hot:"#ff0000",
 		climate_cold:"#0000ff"
+	},
+	map:{
+		type:"light", // light or dark
+		position:"222222" // hex without the #
 	}
 }
 
-if (Device.isUsingDarkAppearance() && false){ 
+if (Device.isUsingDarkAppearance() && is_dark_mode_working){ 
 	// Dark mode is not supported (this always returns true). 
 	// This is in here in the hope that Scriptable will support dark mode at some point in the future.
 	
@@ -80,6 +89,9 @@ if (Device.isUsingDarkAppearance() && false){
 
 	colors.icons.default = "#ffffff99";
 	colors.icons.disabled = "#ffffff44";
+	
+	colors.map.type = "dark";
+	colors.map.position = "CB4335";
 }
 
 // set up a container for our data. 
@@ -207,8 +219,6 @@ function addMapArea(){ // add the map area for medium size.
 
 		const mapZoomLevel = 17;
 		var mapSizeQuery = '200,200@2x';
-		var mapType = 'light' ;
-		var mapIconColorPosition = '222222'
 
 		theme.medium.draw = async function(widget,car_data,colors){
 			widget.setPadding(5,5,5,5);
@@ -232,7 +242,7 @@ function addMapArea(){ // add the map area for medium size.
 			let center_padding = body.addSpacer(10);
 			let column_right = body.addStack();
 
-			let mapUrl = `https://www.mapquestapi.com/staticmap/v5/map?key=${mapKey}&locations=${car_data.latitude},${car_data.longitude}&zoom=${mapZoomLevel}&format=png&size=${mapSizeQuery}&type=${mapType}&defaultMarker=marker-${mapIconColorPosition}`;
+			let mapUrl = `https://www.mapquestapi.com/staticmap/v5/map?key=${mapKey}&locations=${car_data.latitude},${car_data.longitude}&zoom=${mapZoomLevel}&format=png&size=${mapSizeQuery}&type=${colors.map.type}&defaultMarker=marker-${colors.map.position}`;
 			
 			var req = new Request(mapUrl);
 			
