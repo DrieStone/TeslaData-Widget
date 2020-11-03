@@ -25,3 +25,5 @@ Although, it's a good idea to include all of the following fields, the widget wi
 * est_battery_range : the range of the car (as calculated by the logging service)
 * time_to_full_charge : how long until the car is fully charged
 * fast_charger_type : what kind of charger is attached. Should be "<invalid>" if the car is not connected to a charger (the widget only checks to see if it's attached, so the actual type is unimportant).
+* latitude : the latitude location of the car
+* longitude : the longitude location of the car
