@@ -1,10 +1,10 @@
-###Listing of themes available
+# Listing of themes available
 
-##3D Bar
+## 3D Bar
 
 Shows the battery bar in a 3D style.
 
-##Map
+## Map
 
 At medium sizes, it will show a map with the location of the car.
 
