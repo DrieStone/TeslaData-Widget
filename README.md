@@ -103,6 +103,8 @@ Starting with v1.5 The all colors are defined as an obect at the top of the file
 
 Starting with v1.5 TeslaData will optionally pull JSON files from iCloud for testing purposes. Place your JSON files in the tesla_themes directory on iCloud, and tell the widget to pull the data by modifying the debug_data string (i.e. debug_data = "standard" will load the "standard.json" file and ignore the URL).
 
+You can inject your own code without affecting the TeslaData codebase via theming and/or parameters.js The parameters are loaded after the default values are set but before data is pulled from the API. The theme is loaded right before the widget is rendered, but after the data is loaded and processed. You can use the parameters.js file to inject code to change the way that code is loaded. You can create a car_data.postLoad function that will recieve the json from the API (so you can affect the information loaded into the car_data object before it's acted on).
+
 
 ## Changelog
 
