@@ -16,7 +16,7 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 * Link your API do one of the following
     * Under widget options, select "TeslaData Widget" and enter the API url into the widget parameters.
     * If you're using TeslaFi, you can just enter the API Key in the widget paramters.
-    * For advanced users (or if you want to extend the fucntionality of TeslaData), you should create a parameters.js file in iCloud (see Optional below).
+    * For advanced users (or if you want to extend the functionality of TeslaData), you should create a parameters.js file in iCloud (see Optional below).
 
 ### Manual Update
 
