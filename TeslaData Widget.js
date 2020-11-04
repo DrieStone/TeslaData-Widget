@@ -15,7 +15,7 @@
 // This is better than other methods because TeslaFi tries to encourage your car to sleep to reduce phantom battery drain. Using this script will not directly connect to the car to respect the sleep status.
 // Notice that there is ~5 minute lag for data. The data may be stale because TeslaFi won't wake the car to get data. I've added a display so you can see how old the data is. The should (normally) be minutes except when the car is sleeping.
 
-let APIurl = args.widgetParameter;
+let widgetParams = args.widgetParameter;
 
 /* Although you can change these options here, it's recommended that you make changes in the parameters.js file instead. */
 {
@@ -32,7 +32,7 @@ let APIurl = args.widgetParameter;
 	var is_dark_mode_working = false; // Scriptable widgets don't currently support dark mode.
 
 
-	// You can embed your APIurl here, or add it as a widget parameter
+	// You can embed your APIurl here, or add it as a widget parameter (you really should add it to parameters.js though)
 	//APIurl = "YOUR_API_URL" // hardcode the API url
 }
 
@@ -141,6 +141,11 @@ api_file = additional_manager.joinPath(additional_manager.documentsDirectory(),"
 if (additional_manager.fileExists(api_file)){
 	additional_manager.downloadFileFromiCloud(api_file);
 	eval(additional_manager.readString(api_file));
+}
+
+if (widgetParams != null && widgetParams != ""){
+	//use the widget parameters for the APIurl/key
+	APIurl = widgetParams;
 }
 
 // a little helper to try to estimate the size of the widget in pixels
@@ -938,3 +943,5 @@ function themeDebugArea(){
 
 
 }
+
+
