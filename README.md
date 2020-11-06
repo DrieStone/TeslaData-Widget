@@ -108,6 +108,10 @@ You can inject your own code without affecting the TeslaData codebase via themin
 
 ## Changelog
 
+- v1.7
+   - Add my own map API key so users don't have to try to get their own (although still recommended).
+   - Save a local copy of the map to reuse (to reduce calls to the mapping service).
+   - Added link to either Google Maps or Apple Maps when clicking on the map (opens the app and drops a pin where the car is).
 - v1.6
    - Added Longitude/Latitude to data set
    - Updated theming to support async processing (so themes can pull data from external URLs)
