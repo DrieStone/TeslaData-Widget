@@ -3,7 +3,7 @@
 // icon-color: red; icon-glyph: charging-station;
 
 // TeslaData Widget
-// Version 1.5
+// Version 1.7
 // Jon Sweet (jon@driestone.com)
 // Tobias Merkl (@tabsl)
 // 
