@@ -255,7 +255,7 @@ function addMapArea(){ // add the map area for medium size.
 			roundedLong = Math.round(car_data.longitude*2000)/2000;
 			storedFile = "tesla_map"+roundedLat*2000+"!"+roundedLong*2000+".image";
 			
-			let map_image_manager = FileManager.iCloud(); // change this to iCloud for debugging if needed
+			let map_image_manager = FileManager.local(); // change this to iCloud for debugging if needed
 			map_image_file = map_image_manager.joinPath(map_image_manager.documentsDirectory(),storedFile);
 			if (map_image_manager.fileExists(map_image_file)){
 				// load old map from disk
