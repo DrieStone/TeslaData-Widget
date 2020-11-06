@@ -257,11 +257,11 @@ function addMapArea(){ // add the map area for medium size.
 			
 			let map_image_manager = FileManager.iCloud(); // change this to iCloud for debugging if needed
 			map_image_file = map_image_manager.joinPath(map_image_manager.documentsDirectory(),storedFile);
-			/*if (map_image_manager.fileExists(map_image_file)){
+			if (map_image_manager.fileExists(map_image_file)){
 				// load old map from disk
 				mapImage = await map_image_manager.readImage(map_image_file);
 				console.log("Read Map From Disk!");
-			}*/
+			}
 			if (mapImage == null){
 				mapImage = await getMapImage(roundedLong,roundedLat,mapZoomLevel,colors);				
 				// write image to disk for future use
@@ -971,4 +971,5 @@ function themeDebugArea(){
 
 
 }
+
 
