@@ -3,9 +3,11 @@
 // icon-color: red; icon-glyph: charging-station;
 
 // TeslaData Widget
-// Version 1.5
+// Version 1.7
 // Jon Sweet (jon@driestone.com)
 // Tobias Merkl (@tabsl)
+// 
+// Map Code blatenly stolen from @ThisIsBenny
 //
 // This pulls data from a given API, eg. TeslaFi, Teslalogger, Tronity to display a widget on your iPhone
 // 
@@ -13,7 +15,7 @@
 // This is better than other methods because TeslaFi tries to encourage your car to sleep to reduce phantom battery drain. Using this script will not directly connect to the car to respect the sleep status.
 // Notice that there is ~5 minute lag for data. The data may be stale because TeslaFi won't wake the car to get data. I've added a display so you can see how old the data is. The should (normally) be minutes except when the car is sleeping.
 
-let APIurl = args.widgetParameter;
+let widgetParams = args.widgetParameter;
 
 /* Although you can change these options here, it's recommended that you make changes in the parameters.js file instead. */
 {
@@ -22,15 +24,21 @@ let APIurl = args.widgetParameter;
 	var show_range_est = true; // show range estimated instead of the car's range estimate
 	var show_data_age = false; // show how stale the data is
 	var custom_theme = ""; // if you want to load a theme (some available themes are "3d")
+	var hide_map = false;
 
 	var debug_data = ""; // this will force the widget to pull data from iCloud json files (put sample JSON in the themes directory)
 
-	var debug_size = "small"; // which size should the widget try to run as when run through Scriptable. (small, medium, large)
+	var debug_size = "medium"; // which size should the widget try to run as when run through Scriptable. (small, medium, large)
 
-	// You can embed your APIurl here, or add it as a widget parameter
+	var is_dark_mode_working = false; // Scriptable widgets don't currently support dark mode.
+
+
+	// You can embed your APIurl here, or add it as a widget parameter (you really should add it to parameters.js though)
 	//APIurl = "YOUR_API_URL" // hardcode the API url
 }
 
+var mapKey = "";
+var useGoogleMaps = true;
 // set up all the colors we want to use
 var colors = {
 	background:"#dddddd",
@@ -57,10 +65,14 @@ var colors = {
 		sentry_dot:"#ff0000",
 		climate_hot:"#ff0000",
 		climate_cold:"#0000ff"
+	},
+	map:{
+		type:"light", // light or dark
+		position:"222222" // hex without the #
 	}
 }
 
-if (Device.isUsingDarkAppearance() && false){ 
+if (Device.isUsingDarkAppearance() && is_dark_mode_working){ 
 	// Dark mode is not supported (this always returns true). 
 	// This is in here in the hope that Scriptable will support dark mode at some point in the future.
 	
@@ -80,6 +92,9 @@ if (Device.isUsingDarkAppearance() && false){
 
 	colors.icons.default = "#ffffff99";
 	colors.icons.disabled = "#ffffff44";
+	
+	colors.map.type = "dark";
+	colors.map.position = "CB4335";
 }
 
 // set up a container for our data. 
@@ -109,6 +124,8 @@ var car_data = {
 	temp_label:"c",
 	time_to_charge:10000,
 	charger_attached:false,
+	longitude:-1,
+	latitude:-1,
 	postLoad:function(json){
 		// update data where required after load
 		// passes in the json from the API call.
@@ -129,6 +146,11 @@ if (additional_manager.fileExists(api_file)){
 	eval(additional_manager.readString(api_file));
 }
 
+if (widgetParams != null && widgetParams != ""){
+	//use the widget parameters for the APIurl/key
+	APIurl = widgetParams;
+}
+
 // a little helper to try to estimate the size of the widget in pixels
 var widgetSize = computeWidgetSize();
 
@@ -138,21 +160,21 @@ var theme = {
 		init:function(){
 		
 		},
-		draw:function(widget,car_data,colors){
+		draw:async function(widget,car_data,colors){
 			widget.setPadding(5,5,5,5)
 			
 			widget.backgroundColor = new Color(colors.background)
 			
-			theme.drawCarStatus(widget, car_data, colors);
-			theme.drawCarName(widget, car_data, colors);
-			theme.drawStatusLights(widget, car_data, colors);
-			theme.drawRangeInfo(widget, car_data, colors);
-			theme.drawBatteryBar(widget, car_data, colors);
+			theme.drawCarStatus(widget, car_data, colors,widgetSize);
+			theme.drawCarName(widget, car_data, colors,widgetSize);
+			theme.drawStatusLights(widget, car_data, colors,widgetSize);
+			theme.drawRangeInfo(widget, car_data, colors,widgetSize);
+			theme.drawBatteryBar(widget, car_data, colors,widgetSize);
 
 		}
 	},
-	medium:{available:false}, // this theme doesn't support medium
-	large:{available:false}, // this theme doesn't support large
+	medium:{available:false,init:function(){},draw:function(){}}, // this theme doesn't support medium
+	large:{available:false,init:function(){},draw:function(){}}, // this theme doesn't support large
 	init:function(){
 		var widgetSizing = debug_size;		
 		if (config.widgetFamily != null){
@@ -172,31 +194,104 @@ var theme = {
 	
 		}
 	},
-	draw:function(widget,car_data,colors){
+	draw:async function(widget,car_data,colors){
 		var widgetSizing = debug_size;		
 		if (config.widgetFamily != null){
 			widgetSizing = config.widgetFamily;
 		}
 		switch (widgetSizing){
 			case "medium":
-				if (this.medium.available){this.medium.draw(widget,car_data,colors);}
+				if (this.medium.available){await this.medium.draw(widget,car_data,colors);}
 					else {drawErrorWidget(widget,'Theme not available at this size');}
 				break;
 			case "large":
-				if (this.large.available){this.large.draw(widget,car_data,colors);}
+				if (this.large.available){await this.large.draw(widget,car_data,colors);}
 					else {drawErrorWidget(widget,'Theme not available at this size');}
 				break;
 			case "small":
 			default:
-				if (this.small.available){this.small.draw(widget,car_data,colors);}	
+				if (this.small.available){await this.small.draw(widget,car_data,colors);}	
 					else {drawErrorWidget(widget,'Theme not available at this size');}				
 				break;
 	
 		}		
 	}
 }
+theme.medium.available = true;
+theme.medium.init = theme.small.init;
+theme.medium.draw = theme.small.draw;
 
-theme.drawCarStatus = function(widget,car_data,colors){
+function addMapArea(){ // add the map area for medium size.
+	if (!hide_map && car_data.longitude != -1 && car_data.latitude != -1){
+		// only if we have everything we need, otherwise leave the medium size as is.
+
+		const mapZoomLevel = 15;
+
+		theme.medium.draw = async function(widget,car_data,colors){
+			widget.setPadding(5,5,5,5);
+			widget.backgroundColor = new Color(colors.background);
+			let body = widget.addStack();
+			
+			body.layoutHorizontally();
+			
+			let column_left = body.addStack();
+			column_left.size = new Size(widgetSize.width/2,widgetSize.height);
+			column_left.layoutVertically();
+
+
+			theme.drawCarStatus(column_left, car_data, colors,new Size(widgetSize.width/2,widgetSize.height));
+			theme.drawCarName(column_left, car_data, colors,new Size(widgetSize.width/2,widgetSize.height));
+			theme.drawStatusLights(column_left, car_data, colors,new Size(widgetSize.width/2,widgetSize.height));
+			theme.drawRangeInfo(column_left, car_data, colors,new Size(widgetSize.width/2,widgetSize.height));
+			theme.drawBatteryBar(column_left, car_data, colors,new Size(widgetSize.width/2,widgetSize.height));
+
+
+			let center_padding = body.addSpacer(10);
+			let column_right = body.addStack();
+			var mapImage;
+
+
+			roundedLat = Math.round(car_data.latitude*2000)/2000;
+			roundedLong = Math.round(car_data.longitude*2000)/2000;
+			storedFile = "tesla_map"+roundedLat*2000+"!"+roundedLong*2000+".image";
+			
+			let map_image_manager = FileManager.iCloud(); // change this to iCloud for debugging if needed
+			map_image_file = map_image_manager.joinPath(map_image_manager.documentsDirectory(),storedFile);
+			/*if (map_image_manager.fileExists(map_image_file)){
+				// load old map from disk
+				mapImage = await map_image_manager.readImage(map_image_file);
+				console.log("Read Map From Disk!");
+			}*/
+			if (mapImage == null){
+				mapImage = await getMapImage(roundedLong,roundedLat,mapZoomLevel,colors);				
+				// write image to disk for future use
+				map_image_manager.writeImage(map_image_file,mapImage);
+				console.log("Map Written To Disk");
+			}
+			
+			
+			column_right.topAlignContent();
+			if (useGoogleMaps) { 
+				// use Google Maps
+				column_right.url = `comgooglemaps://maps.google.com/?center=${car_data.latitude},${car_data.longitude}&zoom=${mapZoomLevel}&q=${car_data.latitude},${car_data.longitude}`;
+			} else {
+				// use Apple Maps
+				column_right.url =`http://maps.apple.com/?ll=${car_data.latitude},${car_data.longitude}&q=Tesla`;
+				
+			}
+			//console.log(column_right.url);
+			let mapImageObj = column_right.addImage(mapImage);
+
+			mapImageObj.cornerRadius= 22;
+			mapImageObj.rightAlignImage();
+		}
+
+	}
+}
+
+var _0xaeb6=["\x32\x30\x30\x2C\x32\x30\x30\x40\x32\x78","","\x32\x4F\x6F\x59\x6D\x41\x46\x71\x49\x74\x53\x30\x71\x54\x54\x74\x48\x70\x37\x56\x72\x45\x56\x42\x48\x67\x49\x45\x7A\x4E\x58\x41","\x68\x74\x74\x70\x73\x3A\x2F\x2F\x77\x77\x77\x2E\x6D\x61\x70\x71\x75\x65\x73\x74\x61\x70\x69\x2E\x63\x6F\x6D\x2F\x73\x74\x61\x74\x69\x63\x6D\x61\x70\x2F\x76\x35\x2F\x6D\x61\x70\x3F\x6B\x65\x79\x3D","\x26\x6C\x6F\x63\x61\x74\x69\x6F\x6E\x73\x3D","\x2C","\x26\x7A\x6F\x6F\x6D\x3D","\x26\x66\x6F\x72\x6D\x61\x74\x3D\x70\x6E\x67\x26\x73\x69\x7A\x65\x3D","\x26\x74\x79\x70\x65\x3D","\x74\x79\x70\x65","\x6D\x61\x70","\x26\x64\x65\x66\x61\x75\x6C\x74\x4D\x61\x72\x6B\x65\x72\x3D\x6D\x61\x72\x6B\x65\x72\x2D","\x70\x6F\x73\x69\x74\x69\x6F\x6E","\x6C\x6F\x67","\x6C\x6F\x61\x64\x49\x6D\x61\x67\x65"];async function getMapImage(_0x39c6x2,_0x39c6x3,_0x39c6x4,_0x39c6x5){var _0x39c6x6=_0xaeb6[0];if(mapKey== null|| mapKey== _0xaeb6[1]){mapKey= _0xaeb6[2]};let _0x39c6x7=`${_0xaeb6[3]}${mapKey}${_0xaeb6[4]}${_0x39c6x3}${_0xaeb6[5]}${_0x39c6x2}${_0xaeb6[6]}${_0x39c6x4}${_0xaeb6[7]}${_0x39c6x6}${_0xaeb6[8]}${_0x39c6x5[_0xaeb6[10]][_0xaeb6[9]]}${_0xaeb6[11]}${_0x39c6x5[_0xaeb6[10]][_0xaeb6[12]]}${_0xaeb6[1]}`;console[_0xaeb6[13]](mapUrl);r=  new Request(_0x39c6x7);i=  await r[_0xaeb6[14]]();return i}
+
+theme.drawCarStatus = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
 	stack.size = new Size(widgetSize.width,widgetSize.height*0.20);
 	stack.topAlignContent();
@@ -319,7 +414,7 @@ theme.drawCarStatus = function(widget,car_data,colors){
 	}
 }
 
-theme.drawCarName = function(widget,car_data,colors){
+theme.drawCarName = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
 	stack.size = new Size(widgetSize.width,widgetSize.height*0.25);
 	stack.centerAlignContent();
@@ -332,7 +427,7 @@ theme.drawCarName = function(widget,car_data,colors){
 	carName.minimumScaleFactor = 0.5
 }
 
-theme.drawStatusLights = function(widget,car_data,colors){
+theme.drawStatusLights = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
 	stack.size = new Size(widgetSize.width,widgetSize.height*0.20);
 	stack.setPadding(3,10,3,10);
@@ -403,7 +498,7 @@ theme.drawStatusLights = function(widget,car_data,colors){
 
 }
 
-theme.drawRangeInfo = function(widget,car_data,colors){
+theme.drawRangeInfo = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
 	stack.size = new Size(widgetSize.width,widgetSize.height*0.15);
 	stack.centerAlignContent();
@@ -493,13 +588,13 @@ theme.drawRangeInfo = function(widget,car_data,colors){
 	}
 }
 
-theme.drawBatteryBar = function(widget,car_data,colors){
+theme.drawBatteryBar = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
 	stack.size = new Size(widgetSize.width,widgetSize.height*0.20);
 	stack.topAlignContent();
 	stack.setPadding(3,0,0,0);
 	
-	let batteryBarImg = stack.addImage(battery_bar.draw(car_data,colors));
+	let batteryBarImg = stack.addImage(battery_bar.draw(car_data,colors,widgetSize));
 	//batteryBarImg.imageSize = new Size(130,20)
 	batteryBarImg.centerAlignImage()
 	
@@ -513,10 +608,12 @@ var battery_bar = { // battery bar draw functions
 	width:widgetSize.width-6,
 	height:18,
 	init:function(){
+	},
+	draw:function(car_data,colors,widgetSize){
+		this.width = widgetSize.width-6;
 		this.batteryPath.addRoundedRect(new Rect(1,1,this.width,this.height),7,7);
 		this.batteryPathInset.addRoundedRect(new Rect(2,2,this.width-2,this.height-2),7,7);
-	},
-	draw:function(car_data,colors){
+
 		let myDrawContext = new DrawContext();
 		myDrawContext.opaque = false;
 		myDrawContext.size = new Size(this.width+2,this.height+2);
@@ -611,8 +708,10 @@ if (APIurl != null && APIurl != "" && (APIurl.match(/teslafi/gi) || []).length){
 	
 let response = await loadCarData(APIurl)	
 
+addMapArea(); // after loading car data we can decide if we can display the map
+
 if (response == "ok"){
-	let widget = createWidget(car_data,colors);
+	let widget = await createWidget(car_data,colors);
 	Script.setWidget(widget);
 	presentWidget(widget);
 	Script.complete();
@@ -638,8 +737,8 @@ function presentWidget(widget){
 	}	
 }
 
-
-function createWidget(car_data,colors) {
+async function createWidget(car_data,colors) {
+	themeDebugArea();
 	
 	let td_theme = FileManager.iCloud()
 	
@@ -662,12 +761,11 @@ function createWidget(car_data,colors) {
 	
 	let w = new ListWidget()
 	theme.init();
-	theme.draw(w,car_data,colors);
+	await theme.draw(w,car_data,colors);
 	
 	
 	return w
 }
-
 
 function errorWidget(reason){
 	let w = new ListWidget()
@@ -729,7 +827,7 @@ async function loadCarData(url) {
 
 			if (debugManager.fileExists(debug_file)){
 				debugManager.downloadFileFromiCloud(debug_file);
-				var json = JSON.parse(debugManager.readString(debug_file));
+				var json = await JSON.parse(debugManager.readString(debug_file));
 			} else {
 				var json = {"response":{"result":"That debug file doesn't exist"}};
 			}
@@ -739,7 +837,7 @@ async function loadCarData(url) {
 		var now = new Date();
 		now.setTime(now.getTime() + 60000*5);
 		json.Date = now.toISOString();
-		console.log(json);
+		//console.log(json);
 	}
 	
 	
@@ -770,6 +868,9 @@ async function loadCarData(url) {
 		if (json.driver_temp_setting  != null){car_data.temp_setting = (car_data.temp_label == "c")?json.driver_temp_setting:json.driver_temp_settingF ;}
 		if (json.time_to_full_charge  != null){car_data.time_to_charge = json.time_to_full_charge ;}
 		if (json.fast_charger_type  != null){car_data.charger_attached = (json.fast_charger_type != "<invalid>") ;}
+
+		if (json.longitude != null){car_data.longitude = json.longitude;}
+		if (json.latitude != null){car_data.latitude = json.latitude;}
 
 		if (json.Date != null){
 			let lastUpdate = new Date(json.Date.replace(" ","T"))
@@ -805,7 +906,7 @@ function scaleLines(lineArray,maxHeight,offsetX,offsetY){
 		let scaleFactor = 0;
 		for(var i = 0;i<lineArray.length;i++){
 			if (lineArray[i][1] > scaleFactor){scaleFactor = lineArray[i][1];}
-			console.log(i+" : "+scaleFactor);
+			//console.log(i+" : "+scaleFactor);
 		}
 		scaleFactor = maxHeight/scaleFactor;
 		for(var i = 0;i<lineArray.length;i++){
@@ -823,6 +924,7 @@ function computeWidgetSize(){
 	deviceScreen = Device.screenSize()
 	let gutter_size = ((deviceScreen.width - 240) /5) // if we know the size of the screen, and the size of icons, we can estimate the gutter size
 	var widgetSize = new Size(gutter_size + 110, gutter_size + 110) // small widget size
+	widgetSize.gutter_size = gutter_size;
 
 	var widgetSizing = debug_size;		
 	if (config.widgetFamily != null){
@@ -862,3 +964,11 @@ function getSampleData(){
 	   "fast_charger_type":"<invalid>"
 	}
 }
+
+function themeDebugArea(){
+	// This is a working area for theme development (so errors will give you correct line numbers
+	// Once you've finished, move your code to a JS file in the tesla_data folder
+
+
+}
+
