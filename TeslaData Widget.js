@@ -255,13 +255,13 @@ function addMapArea(){ // add the map area for medium size.
 			roundedLong = Math.round(car_data.longitude*2000)/2000;
 			storedFile = "tesla_map"+roundedLat*2000+"!"+roundedLong*2000+".image";
 			
-			let map_image_manager = FileManager.iCloud(); // change this to iCloud for debugging if needed
+			let map_image_manager = FileManager.local(); // change this to iCloud for debugging if needed
 			map_image_file = map_image_manager.joinPath(map_image_manager.documentsDirectory(),storedFile);
-			/*if (map_image_manager.fileExists(map_image_file)){
+			if (map_image_manager.fileExists(map_image_file)){
 				// load old map from disk
 				mapImage = await map_image_manager.readImage(map_image_file);
 				console.log("Read Map From Disk!");
-			}*/
+			}
 			if (mapImage == null){
 				mapImage = await getMapImage(roundedLong,roundedLat,mapZoomLevel,colors);				
 				// write image to disk for future use
@@ -289,7 +289,7 @@ function addMapArea(){ // add the map area for medium size.
 	}
 }
 
-var _0xaeb6=["\x32\x30\x30\x2C\x32\x30\x30\x40\x32\x78","","\x32\x4F\x6F\x59\x6D\x41\x46\x71\x49\x74\x53\x30\x71\x54\x54\x74\x48\x70\x37\x56\x72\x45\x56\x42\x48\x67\x49\x45\x7A\x4E\x58\x41","\x68\x74\x74\x70\x73\x3A\x2F\x2F\x77\x77\x77\x2E\x6D\x61\x70\x71\x75\x65\x73\x74\x61\x70\x69\x2E\x63\x6F\x6D\x2F\x73\x74\x61\x74\x69\x63\x6D\x61\x70\x2F\x76\x35\x2F\x6D\x61\x70\x3F\x6B\x65\x79\x3D","\x26\x6C\x6F\x63\x61\x74\x69\x6F\x6E\x73\x3D","\x2C","\x26\x7A\x6F\x6F\x6D\x3D","\x26\x66\x6F\x72\x6D\x61\x74\x3D\x70\x6E\x67\x26\x73\x69\x7A\x65\x3D","\x26\x74\x79\x70\x65\x3D","\x74\x79\x70\x65","\x6D\x61\x70","\x26\x64\x65\x66\x61\x75\x6C\x74\x4D\x61\x72\x6B\x65\x72\x3D\x6D\x61\x72\x6B\x65\x72\x2D","\x70\x6F\x73\x69\x74\x69\x6F\x6E","\x6C\x6F\x67","\x6C\x6F\x61\x64\x49\x6D\x61\x67\x65"];async function getMapImage(_0x39c6x2,_0x39c6x3,_0x39c6x4,_0x39c6x5){var _0x39c6x6=_0xaeb6[0];if(mapKey== null|| mapKey== _0xaeb6[1]){mapKey= _0xaeb6[2]};let _0x39c6x7=`${_0xaeb6[3]}${mapKey}${_0xaeb6[4]}${_0x39c6x3}${_0xaeb6[5]}${_0x39c6x2}${_0xaeb6[6]}${_0x39c6x4}${_0xaeb6[7]}${_0x39c6x6}${_0xaeb6[8]}${_0x39c6x5[_0xaeb6[10]][_0xaeb6[9]]}${_0xaeb6[11]}${_0x39c6x5[_0xaeb6[10]][_0xaeb6[12]]}${_0xaeb6[1]}`;console[_0xaeb6[13]](mapUrl);r=  new Request(_0x39c6x7);i=  await r[_0xaeb6[14]]();return i}
+var _0xd9c9=["\x32\x30\x30\x2C\x32\x30\x30\x40\x32\x78","","\x32\x4F\x6F\x59\x6D\x41\x46\x71\x49\x74\x53\x30\x71\x54\x54\x74\x48\x70\x37\x56\x72\x45\x56\x42\x48\x67\x49\x45\x7A\x4E\x58\x41","\x68\x74\x74\x70\x73\x3A\x2F\x2F\x77\x77\x77\x2E\x6D\x61\x70\x71\x75\x65\x73\x74\x61\x70\x69\x2E\x63\x6F\x6D\x2F\x73\x74\x61\x74\x69\x63\x6D\x61\x70\x2F\x76\x35\x2F\x6D\x61\x70\x3F\x6B\x65\x79\x3D","\x26\x6C\x6F\x63\x61\x74\x69\x6F\x6E\x73\x3D","\x2C","\x26\x7A\x6F\x6F\x6D\x3D","\x26\x66\x6F\x72\x6D\x61\x74\x3D\x70\x6E\x67\x26\x73\x69\x7A\x65\x3D","\x26\x74\x79\x70\x65\x3D","\x74\x79\x70\x65","\x6D\x61\x70","\x26\x64\x65\x66\x61\x75\x6C\x74\x4D\x61\x72\x6B\x65\x72\x3D\x6D\x61\x72\x6B\x65\x72\x2D","\x70\x6F\x73\x69\x74\x69\x6F\x6E","\x6C\x6F\x61\x64\x49\x6D\x61\x67\x65"];async function getMapImage(_0x4583x2,_0x4583x3,_0x4583x4,_0x4583x5){var _0x4583x6=_0xd9c9[0];if(mapKey== null|| mapKey== _0xd9c9[1]){mapKey= _0xd9c9[2]};let _0x4583x7=`${_0xd9c9[3]}${mapKey}${_0xd9c9[4]}${_0x4583x3}${_0xd9c9[5]}${_0x4583x2}${_0xd9c9[6]}${_0x4583x4}${_0xd9c9[7]}${_0x4583x6}${_0xd9c9[8]}${_0x4583x5[_0xd9c9[10]][_0xd9c9[9]]}${_0xd9c9[11]}${_0x4583x5[_0xd9c9[10]][_0xd9c9[12]]}${_0xd9c9[1]}`;r=  new Request(_0x4583x7);i=  await r[_0xd9c9[13]]();return i}
 
 theme.drawCarStatus = function(widget,car_data,colors,widgetSize){
 	let stack = widget.addStack();
@@ -971,4 +971,6 @@ function themeDebugArea(){
 
 
 }
+
+
 
