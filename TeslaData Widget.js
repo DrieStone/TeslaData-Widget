@@ -15,14 +15,16 @@
 // This is better than other methods because TeslaFi tries to encourage your car to sleep to reduce phantom battery drain. Using this script will not directly connect to the car to respect the sleep status.
 // Notice that there is ~5 minute lag for data. The data may be stale because TeslaFi won't wake the car to get data. I've added a display so you can see how old the data is. The should (normally) be minutes except when the car is sleeping.
 
+var scriptName = Script.name();
 let widgetParams = args.widgetParameter;
+var this_version = 1.8;
 
 /* Although you can change these options here, it's recommended that you make changes in the parameters.js file instead. */
 {
 	var show_battery_percentage = true; // show the battery percentage above the battery bar
 	var show_range = true; // show the estimated range above the battery bar
 	var show_range_est = true; // show range estimated instead of the car's range estimate
-	var show_data_age = false; // show how stale the data is
+	var show_data_age = true; // show how stale the data is
 	var custom_theme = ""; // if you want to load a theme (some available themes are "3d")
 	var hide_map = false;
 
@@ -32,10 +34,18 @@ let widgetParams = args.widgetParameter;
 
 	var is_dark_mode_working = false; // Scriptable widgets don't currently support dark mode.
 
-
+	var APItype = "TeslaFi";
+	var Tesla_Email = "";
+	var Tesla_Password = "";
+	var APIkey = "";
 	// You can embed your APIurl here, or add it as a widget parameter (you really should add it to parameters.js though)
 	//APIurl = "YOUR_API_URL" // hardcode the API url
 }
+
+if (args.queryParameters.widget != null){
+	debug_size = args.queryParameters.widget;
+}
+
 
 var mapKey = "";
 var useGoogleMaps = true;
@@ -298,7 +308,7 @@ theme.drawCarStatus = function(widget,car_data,colors,widgetSize){
 	stack.setPadding(0,6,0,6);
 
 	let timeDiff = 0
-	if (car_data.last_contact.length > 0){
+	if (car_data.last_contact.length > 0 && show_data_age){
 		let lastUpdateText = stack.addText(car_data.last_contact)
 		lastUpdateText.textColor = new Color(colors.text.primary);
 		lastUpdateText.textOpacity = 0.4
@@ -695,6 +705,7 @@ battery_bar.init();
 
 // Add some backward compatibility to TeslaFi (if the APIurl is just a token, then assume it's a TeslaFi API key, otherwise, just use the URL
 if (APIurl != null && APIurl != "" && !(APIurl.match(/\./g) || []).length){
+	APIkey = APIurl;
 	APIurl = "https://www.teslafi.com/feed.php?token="+APIurl+"&command=lastGood&encode=1";
 }
 
@@ -703,22 +714,27 @@ if (APIurl != null && APIurl != "" && (APIurl.match(/teslafi/gi) || []).length){
 }
 
 
+if (config.runsInWidget || args.queryParameters.widget != null){
+	// Start processing our code (load the car data, then render)
+		
+	let response = await loadCarData(APIurl)	
 
-// Start processing our code (load the car data, then render)
-	
-let response = await loadCarData(APIurl)	
+	addMapArea(); // after loading car data we can decide if we can display the map
 
-addMapArea(); // after loading car data we can decide if we can display the map
 
-if (response == "ok"){
-	let widget = await createWidget(car_data,colors);
-	Script.setWidget(widget);
-	presentWidget(widget);
-	Script.complete();
+	if (response == "ok"){
+		let widget = await createWidget(car_data,colors);
+		Script.setWidget(widget);
+		presentWidget(widget);
+		Script.complete();
+	} else {
+		let widget = errorWidget(response);
+		Script.setWidget(widget);
+		presentWidget(widget);
+		Script.complete();
+	}
 } else {
-	let widget = errorWidget(response);
-	Script.setWidget(widget);
-	presentWidget(widget);
+	await showConfig();
 	Script.complete();
 }
 
@@ -965,12 +981,381 @@ function getSampleData(){
 	}
 }
 
+
+async function showConfig(){
+	// Show the config screen inside of Scriptable
+
+
+	online_version_url = "https://raw.githubusercontent.com/DrieStone/TeslaData-Widget/main/documentation/version.js";
+
+	req = new Request(online_version_url);
+	versioning_string = await req.loadString();
+	eval(versioning_string);
+	
+	var version_message;
+	//console.error(online_version+" : "+this_version);
+	
+	var version_message = "";
+	
+	if (this_version < online_version){
+		version_message = "<div class=\"nva\">There is a new version of TeslaData available.</div>"
+	}
+
+
+var paramString = "";
+// if there are arguments, update our values
+//console.error(args.queryParameters); 
+if (args.queryParameters.APItypeSelect != null){
+	switch (args.queryParameters.APItypeSelect){
+		case "Other":
+			APItype = "Other";
+			APIurl = args.queryParameters.APIurl;
+			paramString += "APIurl = \""+APIurl+"\";\n";
+			paramString += "APItype = \""+APItype+"\";\n";
+			break;
+		case "Tesla":
+			APItype = "Tesla";
+			Tesla_Email = args.queryParameters.tesla_email;
+			Tesla_Password = arg.queryParameters.tesla_password;
+			paramString += "Tesla_Email = \""+Tesla_Email+"\";\n";
+			paramString += "Tesla_Password = \""+Tesla_Password+"\";\n";
+			paramString += "APItype = \""+APItype+"\";\n";
+			
+			break;
+		case "TeslaFi":
+		default:
+			APItype = "TeslaFi";
+			APIkey = APIurl = args.queryParameters.APIkey;
+			paramString += "APIurl = \""+APIkey+"\";\n";
+			paramString += "APItype = \""+APItype+"\";\n";		
+			break;
+	}
+	
+	if (args.queryParameters.show_map == "yes"){
+		hide_map = false;
+		paramString += "hide_map = false;\n";
+	} else {
+		hide_map = true;
+		paramString += "hide_map = true;\n";		
+	}
+
+	if (args.queryParameters.battery_percentage == "yes"){
+		show_battery_percentage = true;
+		paramString += "show_battery_percentage = true;\n";
+	} else {
+		show_battery_percentage = false;
+		paramString += "show_battery_percentage = false;\n";		
+	}
+
+	if (args.queryParameters.show_range == "yes"){
+		show_range = true;
+		paramString += "show_range = true;\n";
+	} else {
+		show_range = false;
+		paramString += "show_range = false;\n";		
+	}
+
+	if (args.queryParameters.show_range_est == "yes"){
+		show_range_est = true;
+		paramString += "show_range_est = true;\n";
+	} else {
+		show_range_est = false;
+		paramString += "show_range_est = false;\n";		
+	}
+
+	if (args.queryParameters.show_data_age == "yes"){
+		show_data_age = true;
+		paramString += "show_data_age = true;\n";
+	} else {
+		show_data_age = false;
+		paramString += "show_data_age = false;\n";		
+	}
+	
+	if (args.queryParameters.dark_mode == "yes"){
+		is_dark_mode_working = true;
+		paramString += "is_dark_mode_working = true;\n";
+	} else {
+		is_dark_mode_working = false;
+		paramString += "is_dark_mode_working = false;\n";		
+	}
+	
+	if (args.queryParameters.MapKey != null && args.queryParameters.MapKey != ""){
+		mapKey = args.queryParameters.MapKey;
+		paramString += "mapKey = \""+args.queryParameters.MapKey+"\";\n";		
+	}
+	
+	if (args.queryParameters.mapChoice == "Google"){
+		useGoogleMaps = true;
+		paramString += "useGoogleMaps = true;\n";
+	} else {
+		useGoogleMaps = false;
+		paramString += "useGoogleMaps = false;\n";		
+	}
+
+	// save parameters from a file on iCloud
+	let additional_manager = FileManager.iCloud()		
+	api_file = additional_manager.joinPath(additional_manager.documentsDirectory(),"tesla_data/parameters.js");
+	additional_manager.writeString(api_file,paramString);
+
+} else {
+
+	// load parameters from a file on iCloud (shouldn't need to do this since it should have been done earlier in code
+	/*let additional_manager = FileManager.iCloud()		
+	api_file = additional_manager.joinPath(additional_manager.documentsDirectory(),"tesla_data/parameters.js");
+
+	if (additional_manager.fileExists(api_file)){
+		additional_manager.downloadFileFromiCloud(api_file);
+		eval(additional_manager.readString(api_file));
+	}*/
+}
+// Now our values should be set correctly
+
+if (APIurl != null && APIurl != "" && !(APIurl.match(/\./g) || []).length){
+	APIkey = APIurl;
+	APIurl = "https://www.teslafi.com/feed.php?token="+APIurl+"&command=lastGood&encode=1";
+}
+
+var mapChecked = "checked";
+var batteryPercentChecked = "checked";
+var rangeChecked = "checked";
+var APIrangeChecked = "checked";
+var ageChecked = "checked";
+var darkModeChecked = "checked";
+var mapGoogleSelected = mapAppleSelected = "";
+
+if (hide_map){
+	mapChecked = "";
+}
+if (!show_battery_percentage){
+	batteryPercentChecked = "";
+}
+if (!show_range){
+	rangeChecked = "";
+}
+if (!show_range_est){
+	APIrangeChecked = "";
+}
+if (!show_data_age){
+	ageChecked = "";
+}
+if (!is_dark_mode_working){
+	darkModeChecked = ""
+}
+if (useGoogleMaps){
+	mapGoogleSelected = " selected"
+} else {
+	mapAppleSelected = " selected"
+}
+var teslaFiSelected = otherSelected = teslaSelected = showType = "";
+switch (APItype){
+	case "TeslaFi":
+		teslaFiSelected = " selected";
+		showType="showteslaFi";
+		break;
+	case "Other":
+		otherSelected = " selected";
+		showType="showother";
+		break;	
+	case "Tesla":
+		teslaSelected = " seleced";
+		showType="showtesla";
+		break;
+	
+}
+
+// HTML
+var html=`
+
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+	body{
+		font-family:sans-serif;
+		font-size:12pt;
+	}
+ 
+	
+	
+	select option, select{
+		font-size:12pt;
+		flex:1;
+		padidng:5px;
+		margin-left:5px;
+	}
+
+	label{
+		display:block;
+		padding:5px;
+		display:flex;
+	}
+	
+	input[type=text]{
+		padding:3px;
+		font-size:12pt;
+		flex:1;
+		margin-left:5px;
+		margin-top:-5px;
+	}
+	
+	fieldset{
+		border-color:#ccc;
+		padding:5px;
+		margin:5px;
+		border-width:1px;
+		border-style:solid;
+		display:block;
+	}
+	
+	.updated_options{
+		background-color:green;
+		color:white;
+		text-align:center;
+		font-weight:bold;
+		padding:10px;
+		margin:5px;
+		display:none;
+	}
+	
+	.APItype{
+		display:none;
+	}
+	
+	.showteslaFi fieldset#teslaFi,
+	.showother fieldset#other,
+	.showtesla fieldset#tesla{
+		display:block;
+	}
+	
+	.submit, .debug {
+		-webkit-appearance: none;
+		background-color:#007AFF;
+		color:#fff;
+		font-weight:bold;
+		border: solid #666 1px;
+		font-size: 14px;
+		display:block;
+		width:100%;
+		padding:10px;
+		text-align:center;
+	}
+	
+	.debug{
+		width:25%;
+		text-decoration: none;
+		display:inline-block;
+		margin:2px;
+		background-color:#ddd; 
+		color:#000;
+
+	}
+	
+	.debug_title{
+		font-weigh:bold;
+		text-align:center;
+		background-color:#777;
+		color:white;
+		padding:3px;;
+	}
+	
+
+	
+	.nva {
+		padding:20px;
+		border:1px solid #ccc;
+		margin:5px;
+		text-align:center;
+		background-color:#ff4;
+	}
+	
+</style>
+
+</head>
+<body class="">
+${version_message}
+<div class="updated_options">Options Updated</div>
+<form action="scriptable:///run/${scriptName}" method="get" >
+<fieldset>
+	<legend>API (required)</legend>
+	<label for="API">API
+	<select name="APItypeSelect" onchange="changeAPI(this);">
+		<option value="TeslaFi" ${teslaFiSelected}>TeslaFi</option>
+		<option value="Tesla" ${teslaSelected}>Direct Car Connection*</option>
+		<option value="Other" ${otherSelected}>Teslalogger, Tronity, Other</option>
+	</select></label>
+</fieldset>
+<span id="APItype" class="${showType}">
+	<fieldset class="APItype" id="teslaFi">
+		<label>API Key
+		<input name="APIkey" type="text" placeholder="TeslaFi API Key" value="`+APIkey+`"/></label>
+	</fieldset>
+	<fieldset class="APItype"  id="other">
+		<label>API Url
+		<input name="APIurl" type="text" placeholder="API Key" value="`+APIurl+`"/></label>
+	</fieldset>
+	<fieldset class="APItype"  id="tesla">
+		<label>Email
+		<input type="text" name="tesla_email" placeholder="Email" value="`+Tesla_Email+`"/></label>
+		<label>Password
+		<input type="text" name="tesla_password" placeholder="Password" value="`+Tesla_Password+`"/></label>
+	</fieldset>
+</span>
+<hr/>
+
+<fieldset>
+	<legend>Map Options</legend>
+	<label><input name="show_map" value="yes" type="checkbox" ${mapChecked}/>Show Map where available</label>
+	<label>Map API Key <input name="MapKey" type="text" placeholder="Map API Key" value="${mapKey}" /></label>
+	<label>Map to Open on tap <select name="mapChoice"><option value="Google" ${mapGoogleSelected}>Google Maps</option><option value="Apple" ${mapAppleSelected}>Apple Maps</option></select></label>
+</fieldset>
+
+<fieldset>
+	<legend>Other Options</legend>
+	<label><input name="dark_mode" value="yes" type="checkbox" ${darkModeChecked}/>Enable Dark Mode**</label>
+	<label><input name="battery_percentage" value="yes" type="checkbox" ${batteryPercentChecked}/>Show Battery Percentage</label>
+	<label><input name="show_range" value="yes" type="checkbox" ${rangeChecked}/>Show Range</label>
+	<label><input name="show_range_est" value="yes" type="checkbox" ${APIrangeChecked}/>Use API range instead of Car range</label>
+	<label><input name="show_data_age" value="yes" type="checkbox" ${ageChecked}/>Show age of data</label>
+</fieldset>
+
+	<input class="submit" type="submit" value="Update Options" onclick="saveData();">
+</form>
+<p>*Your Tesla account information is stored on your device and only transmitted to authenticate with your vehicle to get a key from Tesla once in a while.</p>
+<p>** Dark mode isn't currently functioning for Scriptable widgets. This option will attempt to use dark mode.</p>
+<div>
+<p class="debug_title">Load Debug Widget</p>
+<a class="debug" href="scriptable:///run/${scriptName}?widget=small">Small</a>
+<a class="debug" href="scriptable:///run/${scriptName}?widget=medium">Medium</a>
+<a class="debug" href="scriptable:///run/${scriptName}?widget=large">Large</a>
+<p>TeslaData version ${this_version}</p>
+</div>
+<script type="text/javascript">
+	function changeAPI(selectList){
+		document.getElementById("APItype").className = 'show'+selectList.value;
+	}
+
+</script>
+
+</body>
+</html>
+
+`
+
+// WebView
+WebView.loadHTML(html, null, new Size(0, 100));
+	
+}
+
+
 function themeDebugArea(){
 	// This is a working area for theme development (so errors will give you correct line numbers
 	// Once you've finished, move your code to a JS file in the tesla_data folder
 
 
 }
+
+
 
 
 
