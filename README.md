@@ -12,13 +12,13 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 
 * Get Scriptable in the Apple App Store.
 * Download the `TeslaData Widget.js` file to your iCloud/Scriptable folder (or create a new widget in the scriptable app).
-* Click on TeslaData within the Scriptable App and set through the confguration.
-* Create a small scriptable widget.
 
-### Manual Update
+## Setup
 
-* Replace the `TeslaData Widget.js` in your iCloud/Scriptable folder with the one here.
-* Wait 5-7 minutes for Scriptable to grab the new file and update the widget.
+* Click on TeslaData within the Scriptable App and step through the confguration.
+* Create a Scriptable widget.
+* Long press on the widget, choose "Edit Widget"
+* Choose "TeslaData" from the Script Menu
 
 ### Optional/Advanced
 * Get a [map API key from MapQuest](https://developer.mapquest.com/) and add it to your paramters.js file.
