@@ -28,6 +28,8 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 ### TeslaFi API
 You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://teslafi.com/api.php).
 
+Note, due to the lag with TeslaFi pulling data from your car, and the lag of iOS pulling the data, the resulting display could be ~5 minutes stale (and the data could be hours or even a day old because TeslaFi lets the car sleep, so its not sending data)
+
 ### Other API
 If you use other tools like [TeslaLogger](https://github.com/bassmaster187/TeslaLogger), [Tronity](https://tronity.io/home/5OiA7SfA), etc. you only have to provide [json file](documentation/sample.json) with the following data ([more details on the required fields](documentation/json_requirements.md)):
 
@@ -65,8 +67,8 @@ If you run TeslaData from the Scriptable app, the configuration screen will disp
 
 <img src="documentation/config.png" width="400" /> &nbsp;
 
+At the bottom of the configuration screen, you'll find buttons for debug display of the small, medium, and large size widgets. This is used to preview the widget for development use, but you can also use it to preview the changes you've made to the configuration. Note that you need to update your configuration before previewing changes.
 
-Note, due to the lag with TeslaFi pulling data from your car, and the lag of iOS pulling the data, the resulting display could be ~5 minutes stale (and the data could be hours or even a day old because TeslaFi lets the car sleep, so its not sending data)
 
 ## Features
 
