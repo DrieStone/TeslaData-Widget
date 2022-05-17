@@ -21,7 +21,7 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 * Choose "TeslaData" from the Script Menu
 
 ### Optional/Advanced
-* Get a [map API key from MapQuest](https://developer.mapquest.com/) and add it to your paramters.js file.
+* Get a [map API key from MapQuest](https://developer.mapquest.com/) and add it to your parameters.js file.
 * Install any themes into the tesla_data folder, and modify the parameters.js file to include the theme you'd like to apply (e.g. custom_theme = "3d" will load the 3d.js theme from the themes directory).
 * If you have multiple cars, you can put your TeslaFi key or other datalogger URL into the script parameters. All other options will be the same across widgets.
 
