@@ -106,7 +106,7 @@ You can inject your own code without affecting the TeslaData codebase via themin
 
 ## Changelog
 
-- v1.8
+- v2.0
    - Added a configuration system so the user doesn't have to edit Javascript files to set up TeslaData
    - Added iPad support
    - Fixed layout issues with medium layout (the car info was too high in the widget)
@@ -115,6 +115,8 @@ You can inject your own code without affecting the TeslaData codebase via themin
    - Upscaled UI elements to appear cleaner on higher resolution devices
    - Added theme switcher
    - Moved themes and debug data into dedicated folders
+   - Broke out existing theme to make it easier to create new themes
+   - Added a theme that matches the original classic view
      
 - v1.7
    - Add my own map API key so users don't have to try to get their own (although still recommended).
