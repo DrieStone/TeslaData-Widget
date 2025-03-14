@@ -12,28 +12,23 @@ A Scriptable widget to pull data from a given API, eg. TeslaFi, Teslalogger, Tro
 
 * Get Scriptable in the Apple App Store.
 * Download the `TeslaData Widget.js` file to your iCloud/Scriptable folder (or create a new widget in the scriptable app).
-* Create a small scriptable widget.
-* Link your API do one of the following
-    * Under widget options, select "TeslaData Widget" and enter the API url into the widget parameters.
-    * If you're using TeslaFi, you can just enter the API Key in the widget paramters.
-    * For advanced users (or if you want to extend the functionality of TeslaData), you should create a parameters.js file in iCloud (see Optional below).
 
-### Manual Update
+## Setup
 
-* Replace the `TeslaData Widget.js` in your iCloud/Scriptable folder with the one here.
-* Wait 5-7 minutes for Scriptable to grab the new file and update the widget.
+* Click on TeslaData within the Scriptable App and step through the confguration.
+* Create a Scriptable widget.
+* Long press on the widget, choose "Edit Widget"
+* Choose "TeslaData" from the Script Menu
 
 ### Optional/Advanced
-* Download/create the tesla_data directory to your iCloud/Scriptable folder.
-* Create a paramters.js file (or copy the one from here), and add your API url to the file.
-* Get a [map API key from MapQuest](https://developer.mapquest.com/) and add it to your paramters.js file.
+* Get a [map API key from MapQuest](https://developer.mapquest.com/) and add it to your parameters.js file.
 * Install any themes into the tesla_data folder, and modify the parameters.js file to include the theme you'd like to apply (e.g. custom_theme = "3d" will load the 3d.js theme from the themes directory).
-* Note: The widget parameter overrides the parameters.js. This is so you can have widgets for more than one car (or more than one data source).
+* If you have multiple cars, you can put your TeslaFi key or other datalogger URL into the script parameters. All other options will be the same across widgets.
 
 ### TeslaFi API
 You obviously need a TeslaFi account (and a Tesla). Get your [API Key](https://teslafi.com/api.php).
 
-API url: `https://www.teslafi.com/feed.php?token=YOUR_API_KEY&command=lastGood&encode=1`
+Note, due to the lag with TeslaFi pulling data from your car, and the lag of iOS pulling the data, the resulting display could be ~5 minutes stale (and the data could be hours or even a day old because TeslaFi lets the car sleep, so its not sending data)
 
 ### Other API
 If you use other tools like [TeslaLogger](https://github.com/bassmaster187/TeslaLogger), [Tronity](https://tronity.io/home/5OiA7SfA), etc. you only have to provide [json file](documentation/sample.json) with the following data ([more details on the required fields](documentation/json_requirements.md)):
@@ -64,13 +59,16 @@ API url (eg.): https://MY_USER:MY_PASS@MY_URL.com/api.json
 
 ## Map
 
-At medium sizes, the widget will show a map with the location of the car, but only if your API includes long/lat and you have a key from MapQuest. Visit https://developer.mapquest.com/ to create an account and get an API. Then, add the API key in your parameters.js file.
+At medium sizes, the widget will show a map with the location of the car, but only if your API includes long/lat. We would recommend getting your own API key and putting it in the configuration to reduce load on our systems. Visit https://developer.mapquest.com/ to create an account and get an API. 
 
 ## Configuration
 
-There are a few options if you want to turn on/off battery percentage and estimated range (and if you'd like to use the car's range, or the TeslaFi estimate). These options are the constants at the top of the file (set the variables as true/false)
+If you run TeslaData from the Scriptable app, the configuration screen will display, where you'll be able to configure TeslaData.
 
-Note, due to the lag with TeslaFi pulling data from your car, and the lag of iOS pulling the data, the resulting display could be ~5 minutes stale (and the data could be hours or even a day old because TeslaFi lets the car sleep, so its not sending data)
+<img src="documentation/config.png" width="400" /> &nbsp;
+
+At the bottom of the configuration screen, you'll find buttons for debug display of the small, medium, and large size widgets. This is used to preview the widget for development use, but you can also use it to preview the changes you've made to the configuration. Note that you need to update your configuration before previewing changes.
+
 
 ## Features
 
@@ -108,6 +106,18 @@ You can inject your own code without affecting the TeslaData codebase via themin
 
 ## Changelog
 
+- v2.0
+   - Added a configuration system so the user doesn't have to edit Javascript files to set up TeslaData
+   - Added iPad support
+   - Fixed layout issues with medium layout (the car info was too high in the widget)
+   - Changed several icons to fix issues with updated Scriptable changes
+   - Made several UI changes to new design
+   - Upscaled UI elements to appear cleaner on higher resolution devices
+   - Added theme switcher
+   - Moved themes and debug data into dedicated folders
+   - Broke out existing theme to make it easier to create new themes
+   - Added a theme that matches the original classic view
+     
 - v1.7
    - Add my own map API key so users don't have to try to get their own (although still recommended).
    - Save a local copy of the map to reuse (to reduce calls to the mapping service).
